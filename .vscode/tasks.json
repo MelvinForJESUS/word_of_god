@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build and Install APK (Release)",
+            "type": "shell",
+            "command": "flutter build apk --release && adb install -r build/app/outputs/flutter-apk/app-release.apk",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build and Install APK (Profile)",
+            "type": "shell",
+            "command": "flutter build apk --profile && adb install -r build/app/outputs/flutter-apk/app-profile.apk",
+            "problemMatcher": []
+        }
+    ]
+}
