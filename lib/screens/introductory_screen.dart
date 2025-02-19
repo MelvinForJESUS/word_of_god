@@ -37,7 +37,7 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
   final String _blessingText = "In the Name\nof the Father,\nthe Son\nand the Holy Spirit.";
   List<String> _blessingWords = [];
   // int _currentWordIndex = 0; // Not directly used in the final version, but good for understanding
-  bool _typingAnimationComplete = false;
+  // bool _typingAnimationComplete = false; // REMOVED
 
   @override
   void initState() {
@@ -85,16 +85,16 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
     _blessingWords = _blessingText.split(" "); // Split the text into words
     _typingAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2500), // Total duration for typing effect (adjust as needed)
+      duration: const Duration(seconds: 4), // Increased duration to 4 seconds (adjust as needed)
     );
 
-    _typingAnimationController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        setState(() {
-          _typingAnimationComplete = true; // Set flag when animation completes
-        });
-      }
-    });
+    // _typingAnimationController.addStatusListener((status) { // REMOVED
+    //   if (status == AnimationStatus.completed) {
+    //     setState(() {
+    //       _typingAnimationComplete = true; // Set flag when animation completes
+    //     });
+    //   }
+    // });
 
     // Delay the banner fade-out animation.
     Future.delayed(const Duration(seconds: 2), () {
@@ -134,31 +134,68 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
     super.dispose();
   }
 
-    // Helper function to build the animated typing text
+// Helper function to build the animated typing text
   Widget _buildTypingText(double screenWidth) {
     return AnimatedBuilder(
       animation: _typingAnimationController,
       builder: (context, child) {
         int numWordsToShow =
             (_typingAnimationController.value * _blessingWords.length).floor();
-        String textToShow = _blessingWords.sublist(0, numWordsToShow).join(" ");
+        double fadeStart = 0.0;
+        if (numWordsToShow < _blessingWords.length) {
+            fadeStart = (numWordsToShow / _blessingWords.length);
+        }
 
-        return Text(
-          textToShow,
+        double fadeEnd = fadeStart + (1.0 / _blessingWords.length) * 0.8;
+
+        return RichText(
           textAlign: TextAlign.center,
-          style: GoogleFonts.roboto(
-            textStyle: TextStyle(
-              fontSize: screenWidth * 0.07, // Responsive font size
-              fontWeight: FontWeight.bold,
-              color: AppTheme.jesusChristGold.withAlpha(180), // Use gold with reduced opacity
-              height: 1.4,
+          text: TextSpan(
+            style: GoogleFonts.roboto(
+              textStyle: TextStyle(
+                fontSize: screenWidth * 0.07, // Responsive font size
+                fontWeight: FontWeight.bold,
+                color: AppTheme.jesusChristGold.withAlpha(180), // Use gold with reduced opacity
+                height: 1.4,
+              ),
             ),
+            children: _buildTextSpans(numWordsToShow, fadeStart, fadeEnd),
           ),
         );
       },
     );
   }
 
+  // New helper function to build the list of TextSpans
+  List<InlineSpan> _buildTextSpans(int numWordsToShow, double fadeStart, double fadeEnd) {
+    List<InlineSpan> spans = [];
+
+    for (int i = 0; i < _blessingWords.length; i++) {
+      if (i < numWordsToShow) {
+        // Fully visible word
+        spans.add(TextSpan(text: "${_blessingWords[i]} ")); // String interpolation
+      } else if (i == numWordsToShow) {
+        // Fading word
+        double opacity = Curves.easeIn.transform(
+          max(0.0, min(1.0, (_typingAnimationController.value - fadeStart) / (fadeEnd - fadeStart)))
+        );
+
+        spans.add(
+          TextSpan(
+            text: "${_blessingWords[i]} ", // String interpolation
+            style: TextStyle(color: AppTheme.jesusChristGold.withAlpha((opacity * 180).toInt())), //Dynamic opacity
+          ),
+        );
+      } else {
+        //  words not yet visible.
+        spans.add(
+            TextSpan(text: '', style: TextStyle(color: AppTheme.jesusChristGold.withAlpha(0))),
+        );
+      }
+    }
+
+    return spans;
+  }
   // _isCrossDrawn: Determines if the user has drawn a recognizable cross.
   bool _isCrossDrawn(List<List<Offset>> strokes, Size canvasSize) {
     if (strokes.length < 2) return false; // Need at least two strokes
@@ -257,20 +294,17 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // --- Responsive Values ---
-    // These values are calculated based on the screen size to ensure
-    // the UI looks good on different devices.
-
+   // --- Responsive Values ---
     // Header Section
     final double headerFontSize = screenWidth * 0.11;
-    final double headerBoxWidth = screenWidth * 0.7;
-    final double headerBoxHeight = screenHeight * 0.07;
-    final double headerShadowBlurRadius = screenWidth * 0.11;
-    final double headerShadowSpreadRadius = screenWidth * 0.008;
+    // final double headerBoxWidth = screenWidth * 0.7;  // REMOVED
+    // final double headerBoxHeight = screenHeight * 0.07; // REMOVED
+    // final double headerShadowBlurRadius = screenWidth * 0.11; // REMOVED
+    // final double headerShadowSpreadRadius = screenWidth * 0.008; // REMOVED
 
     // Blessing Text Section
-    final double blessingFontSize = screenWidth * 0.07;
-    final double blessingLineHeight = 1.4;
+    // final double blessingFontSize = screenWidth * 0.07; // REMOVED and used directly in _buildTypingText
+    // final double blessingLineHeight = 1.4; // REMOVED and used directly
     final double blessingPaddingHorizontal = screenWidth * 0.07;
 
     // Drawing Area Section
@@ -357,7 +391,10 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                   Padding(
                     padding:
                         EdgeInsets.symmetric(horizontal: blessingPaddingHorizontal),
-                    child:_buildTypingText(screenWidth),
+                    child: SizedBox( // Wrap with SizedBox
+                      height: screenHeight * 0.25,  // Adjust this as needed, enough for all lines
+                      child: _buildTypingText(screenWidth),
+                      ),
                   ),
                   SizedBox(height: screenHeight * 0.04), // Spacing
 
@@ -453,12 +490,12 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                               borderRadius: BorderRadius.circular(30), // Rounded corners
                             ),
                           ).copyWith(
-                            elevation: MaterialStateProperty.all(8),
-                            shadowColor: MaterialStateProperty.all(
+                            elevation: WidgetStateProperty.all(8),
+                            shadowColor: WidgetStateProperty.all(
                                 AppTheme.accentGold.withAlpha((0.8 * 255).toInt())),
-                            overlayColor: MaterialStateProperty.resolveWith<Color?>(
-                                  (Set<MaterialState> states) {
-                                if (states.contains(MaterialState.pressed)) {
+                            overlayColor: WidgetStateProperty.resolveWith<Color?>(
+                                  (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.pressed)) {
                                   return AppTheme.accentGold.withAlpha(50); // Slightly darker when pressed
                                 }
                                 return null; // Defer to the widget's default.
