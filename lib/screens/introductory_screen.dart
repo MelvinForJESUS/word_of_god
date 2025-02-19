@@ -8,42 +8,7 @@ import 'preparatory_screen.dart';
 import '../utils/theme.dart';
 import 'dart:math'; // Import for math functions (used in cross detection)
 
-// BreathingAnimation widget (No changes) - Provides a subtle pulsing animation.
-class BreathingAnimation extends StatefulWidget {
-  final Widget child;
-  const BreathingAnimation({super.key, required this.child});
-  @override
-  _BreathingAnimationState createState() => _BreathingAnimationState();
-}
-
-class _BreathingAnimationState extends State<BreathingAnimation>
-    with TickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 3), // Controls the speed of the animation
-      vsync: this,
-    )..repeat(reverse: true); // Makes the animation repeat back and forth
-    _animation = Tween<double>(begin: 1.0, end: 1.03).animate(_controller); // Defines the scale range
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _animation,
-      child: widget.child,
-    );
-  }
-}
+// BreathingAnimation widget (Removed) - No longer used.
 
 class IntroductoryScreen extends StatefulWidget {
   const IntroductoryScreen({super.key});
@@ -61,9 +26,18 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
   late Animation<double> _bannerFadeAnimation; // Animation for the banner fade-out
   late AnimationController _amenButtonAnimationController; // Controller for Amen button fade-in
   late Animation<double> _amenButtonFadeAnimation;   // Animation for Amen button fade-in
+  late AnimationController _helperTextAnimationController; // Controller for helper text fade-out
+  late Animation<double> _helperTextFadeAnimation; // Animation for helper text fade-out
   bool _showBanner = true; // Flag to control the visibility of the banner
   bool _showAmenButton = false; // Flag to control the visibility of the Amen button
   bool _allowDrawing = false; // Flag to control when drawing is permitted
+
+  // Typing animation variables
+  late AnimationController _typingAnimationController;
+  final String _blessingText = "In the Name\nof the Father,\nthe Son\nand the Holy Spirit.";
+  List<String> _blessingWords = [];
+  // int _currentWordIndex = 0; // Not directly used in the final version, but good for understanding
+  bool _typingAnimationComplete = false;
 
   @override
   void initState() {
@@ -95,25 +69,56 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
       ),
     );
 
-    // Delay the banner fade-out animation.
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) { // Check if the widget is still mounted before updating state
-        _bannerAnimationController.forward().whenComplete(() {
-          setState(() {
-            _showBanner = false; // Hide the banner after the animation
-            _allowDrawing = true; // Enable drawing AFTER banner disappears
-          });
+    // Initialize helper text animation controller and animation
+    _helperTextAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500), // Match Amen button fade-in
+    );
+    _helperTextFadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _helperTextAnimationController,
+        curve: Curves.easeOut, // Fade out smoothly
+      ),
+    );
+
+    // --- Typing Animation Setup ---
+    _blessingWords = _blessingText.split(" "); // Split the text into words
+    _typingAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2500), // Total duration for typing effect (adjust as needed)
+    );
+
+    _typingAnimationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _typingAnimationComplete = true; // Set flag when animation completes
         });
       }
     });
 
-    // Delay the appearance of the "Amen" button.  This acts as a fallback
-    // if the user has trouble drawing the cross.
+    // Delay the banner fade-out animation.
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _bannerAnimationController.forward().whenComplete(() {
+          setState(() {
+            _showBanner = false; // Hide the banner
+            _allowDrawing = true; // Enable drawing
+          });
+          // Start the typing animation *here*, after the banner is gone.
+          if (mounted) {
+            _typingAnimationController.forward();
+          }
+        });
+      }
+    });
+
+    // Delay the "Amen" button and helper text fade-out.
     Future.delayed(const Duration(seconds: 7), () {
       if (mounted) {
         setState(() {
-          _showAmenButton = true; // Show the Amen button
-          _amenButtonAnimationController.forward(); // Start fade-in animation
+          _showAmenButton = true;
+          _amenButtonAnimationController.forward(); // Fade in Amen button
+          _helperTextAnimationController.forward(); // Fade out helper text
         });
       }
     });
@@ -123,8 +128,35 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
   void dispose() {
     _animationController.dispose();
     _bannerAnimationController.dispose();
-    _amenButtonAnimationController.dispose(); // Dispose of the Amen button controller
+    _amenButtonAnimationController.dispose();
+    _helperTextAnimationController.dispose();
+    _typingAnimationController.dispose(); // Dispose of the typing animation controller
     super.dispose();
+  }
+
+    // Helper function to build the animated typing text
+  Widget _buildTypingText(double screenWidth) {
+    return AnimatedBuilder(
+      animation: _typingAnimationController,
+      builder: (context, child) {
+        int numWordsToShow =
+            (_typingAnimationController.value * _blessingWords.length).floor();
+        String textToShow = _blessingWords.sublist(0, numWordsToShow).join(" ");
+
+        return Text(
+          textToShow,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.roboto(
+            textStyle: TextStyle(
+              fontSize: screenWidth * 0.07, // Responsive font size
+              fontWeight: FontWeight.bold,
+              color: AppTheme.jesusChristGold.withAlpha(180), // Use gold with reduced opacity
+              height: 1.4,
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // _isCrossDrawn: Determines if the user has drawn a recognizable cross.
@@ -321,24 +353,11 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                   ),
                   SizedBox(height: screenHeight * 0.03), // Responsive SizedBox
 
-                  // Subheading - Blessing text with breathing animation.
+                  // Subheading - Blessing text (Typing Animation)
                   Padding(
                     padding:
                         EdgeInsets.symmetric(horizontal: blessingPaddingHorizontal),
-                    child: BreathingAnimation( // Applies the breathing animation
-                      child: Text(
-                        "In the Name\nof the Father,\nthe Son\nand the Holy Spirit.",
-                        textAlign: TextAlign.center, // Center-align the text
-                        style: GoogleFonts.roboto( // Use the Roboto font
-                          textStyle: TextStyle(
-                            fontSize: blessingFontSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orangeAccent, // Text color
-                            height: blessingLineHeight, // Line height for spacing
-                          ),
-                        ),
-                      ),
-                    ),
+                    child:_buildTypingText(screenWidth),
                   ),
                   SizedBox(height: screenHeight * 0.04), // Spacing
 
@@ -382,19 +401,22 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                   // Use Spacer to push content to the top and button to the bottom
                   const Spacer(),
 
-                  // Helper text - Instructions to draw cross.
-                  Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: blessingPaddingHorizontal),
-                    child: Text(
-                      "Draw the sign of the cross using the guide lines above.",
-                      textAlign: TextAlign.center, // Center-align the text
-                      style: TextStyle(
-                          fontSize: helperTextFontSize, color: Colors.white70),
+                  // Helper text - Instructions to draw cross (with fade-out).
+                  FadeTransition(
+                    opacity: _helperTextFadeAnimation, // Controls the fade-out
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: blessingPaddingHorizontal),
+                      child: Text(
+                        "Draw the sign of the cross using the guide lines above.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: helperTextFontSize, color: Colors.white70),
+                      ),
                     ),
                   ),
 
-                  SizedBox(height: screenHeight * 0.02), // Spacing before button (adjust as needed)
+                  SizedBox(height: screenHeight * 0.02), // Spacing before button
                 ],
               ),
             ),
@@ -409,7 +431,7 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                 child: FadeTransition(
                   opacity: _amenButtonFadeAnimation,
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.15), // Add horizontal padding
+                    padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.15),
                     child: AnimatedBuilder(
                       animation: _animationController,
                       builder: (context, child) {
@@ -430,11 +452,11 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30), // Rounded corners
                             ),
-                          ).copyWith( // Use copyWith to modify the default style
-                            elevation: MaterialStateProperty.all(8), // Constant elevation
+                          ).copyWith(
+                            elevation: MaterialStateProperty.all(8),
                             shadowColor: MaterialStateProperty.all(
                                 AppTheme.accentGold.withAlpha((0.8 * 255).toInt())),
-                            overlayColor: MaterialStateProperty.resolveWith<Color?>( // Add a subtle overlay color
+                            overlayColor: MaterialStateProperty.resolveWith<Color?>(
                                   (Set<MaterialState> states) {
                                 if (states.contains(MaterialState.pressed)) {
                                   return AppTheme.accentGold.withAlpha(50); // Slightly darker when pressed
@@ -457,22 +479,22 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
 
             // Full Screen Banner (Fades out at the start).
             if (_showBanner)
-              FadeTransition( // Applies a fade transition
-                opacity: _bannerFadeAnimation, // Controls the opacity
-                child: Container( // The banner container
-                  color: AppTheme.godTheFather, // Background color
-                  alignment: Alignment.center, // Center the text
+              FadeTransition(
+                opacity: _bannerFadeAnimation,
+                child: Container(
+                  color: AppTheme.godTheFather,
+                  alignment: Alignment.center,
                   child: Padding(
                     padding: EdgeInsets.all(bannerPadding),
                     child: Text(
-                      "WORD\nof\nGOD", // Banner text
+                      "WORD\nof\nGOD",
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.lora( // Use the Lora font
+                      style: GoogleFonts.lora(
                         textStyle: TextStyle(
                           fontSize: bannerFontSize,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
-                          letterSpacing: 1.5, // Letter spacing for style
+                          letterSpacing: 1.5,
                         ),
                       ),
                     ),
