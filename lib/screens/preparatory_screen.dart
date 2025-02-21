@@ -80,18 +80,18 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
 
     // --- Responsive Values ---
     // Title
-    final double titleFontSize = screenWidth * 0.09; // Keep title font size
+    final double titleFontSize =
+        screenWidth * 0.07; // Reduced title font size
     final double titleShadowBlurRadius = screenWidth * 0.01;
     final double titleShadowOffset = screenWidth * 0.005;
-    // Reduce top and bottom spacing around the title
-    final double titleTopSpacingVertical = screenHeight * 0.04; // Reduced top spacing
-    final double titleBottomSpacingVertical = screenHeight * 0.025; // Reduced bottom spacing
-
+    final double titleTopSpacingVertical =
+        screenHeight * 0.05; // Adjusted top spacing
+    final double titleBottomSpacingVertical =
+        screenHeight * 0.03; // Adjusted bottom spacing
 
     // Verses
-    final double verseFontSize = screenWidth * 0.06; // Increased verse font size
-    final double verseSpacingVertical =
-        screenHeight * 0.03; // Slightly reduced verse spacing
+    final double verseFontSize =
+        screenWidth * 0.0675; // Increased verse font size
     final double versePaddingVertical =
         screenHeight * 0.017; // Slightly increased padding
     final double versePaddingHorizontal = screenWidth * 0.03;
@@ -101,16 +101,14 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
     final double citationIconSize = screenWidth * 0.03; // Slightly larger icon
 
     // Button
-    final double buttonSpacingVertical =
-        screenHeight * 0.05; // Slightly reduced button spacing
-   final double buttonFontSize = screenWidth * 0.045;
+    final double buttonFontSize = screenWidth * 0.045;
     final double buttonPaddingHorizontal = screenWidth * 0.1; // Wider button
     final double buttonPaddingVertical = screenHeight * 0.018;
     final double buttonBorderRadius = screenWidth * 0.03;
 
     return Scaffold(
       body: Container(
-        width: screenWidth,
+        width: screenW idth,
         height: screenHeight,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -122,235 +120,220 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
               begin: Alignment.topCenter,
               end: Alignment.bottomRight),
         ),
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.06,
-              vertical: screenHeight * 0.04),
+        child: SafeArea(
+          // Use SafeArea to avoid status bar intrusion
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            // Use Column for main layout
+            mainAxisAlignment: MainAxisAlignment
+                .spaceBetween, // Distribute space between title, verses, and button
             children: [
-              SizedBox(height: titleTopSpacingVertical), // Reduced top space
-              Text(
-                "Verses to Meditate", // Changed Title
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'RobotoSlab',
-                  fontSize: titleFontSize,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                        blurRadius: titleShadowBlurRadius,
-                        color: Colors.black26,
-                        offset: Offset(titleShadowOffset, titleShadowOffset))
-                  ],
+              // Title Section
+              Padding(
+                padding: EdgeInsets.only(
+                    top: titleTopSpacingVertical,
+                    bottom: titleBottomSpacingVertical),
+                child: Text(
+                  "Verses to Meditate", // Changed Title
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'RobotoSlab',
+                    fontSize: titleFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                          blurRadius: titleShadowBlurRadius,
+                          color: Colors.black26,
+                          offset: Offset(titleShadowOffset, titleShadowOffset))
+                    ],
+                  ),
                 ),
               ),
-              SizedBox(height: titleBottomSpacingVertical), // Reduced bottom space
 
-              // Verse 1
-              FadeTransition(
-                opacity: _verse1FadeAnimation,
-                child: Container(
+              // Verses Section (Wrapped in Expanded)
+              Expanded(
+                child: SingleChildScrollView(
+                  // Allows scrolling if content overflows
                   padding: EdgeInsets.symmetric(
-                      vertical: versePaddingVertical,
-                      horizontal: versePaddingHorizontal),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.03),
-                    borderRadius: BorderRadius.circular(verseBorderRadius),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                      horizontal: screenWidth * 0.06),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment
+                        .center, // Center verses vertically within the expanded space
                     children: [
-                      Expanded(
-                        child: Text(
-                          "Cast all your anxieties on Him, for He cares for you.  ",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.robotoSlab(
-                            textStyle: TextStyle(
-                              fontSize: verseFontSize,
-                              color: Colors.white,
-                              fontStyle: FontStyle.normal,
-                              shadows: [
-                                 Shadow(
-                                    color: const Color.fromARGB(255, 192, 136, 45),
-                                    blurRadius: screenWidth * 0.005,
-                                    offset: Offset(screenWidth * 0.0025,
-                                        screenWidth * 0.0025)),
-                              ],
-                            ),
-                          ),
+                      // Verse 1
+                      FadeTransition(
+                        opacity: _verse1FadeAnimation,
+                        child: _buildVerseContainer(
+                          verseText:
+                              "Cast all your anxieties on Him, for He cares for you.",
+                          citation: "1 Peter 5:7",
+                          verseFontSize: verseFontSize,
+                          versePaddingVertical: versePaddingVertical,
+                          versePaddingHorizontal: versePaddingHorizontal,
+                          verseBorderRadius: verseBorderRadius,
+                          citationIconSize: citationIconSize,
+                          screenWidth: screenWidth,
                         ),
                       ),
-                      Tooltip(
-                        message: "1 Peter 5:7",
-                        waitDuration: Duration.zero,
-                        showDuration: const Duration(seconds: 3),
-                        child: Icon(Icons.info_outline,
-                            color: Colors.white, size: citationIconSize),
+                      SizedBox(height: screenHeight * 0.02), // Reduced spacing
+
+                      // Verse 2
+                      FadeTransition(
+                        opacity: _verse2FadeAnimation,
+                        child: _buildVerseContainer(
+                          verseText:
+                              "Trust in the Lord with all your heart and lean not on your own understanding.",
+                          citation: "Proverbs 3:5-6",
+                          verseFontSize: verseFontSize,
+                          versePaddingVertical: versePaddingVertical,
+                          versePaddingHorizontal: versePaddingHorizontal,
+                          verseBorderRadius: verseBorderRadius,
+                          citationIconSize: citationIconSize,
+                           screenWidth: screenWidth,
+                        ),
+                      ),
+                      SizedBox(height: screenHeight * 0.02), // Reduced spacing
+
+                      // Verse 3
+                      FadeTransition(
+                        opacity: _verse3FadeAnimation,
+                        child: _buildVerseContainer(
+                          verseText:
+                              "I love You, O Lord, and for Your sake, I love my neighbor as myself.",
+                          citation: "Matthew 22:37-40",
+                          verseFontSize: verseFontSize,
+                          versePaddingVertical: versePaddingVertical,
+                          versePaddingHorizontal: versePaddingHorizontal,
+                          verseBorderRadius: verseBorderRadius,
+                          citationIconSize: citationIconSize,
+                           screenWidth: screenWidth,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-              SizedBox(height: verseSpacingVertical),
 
-              // Verse 2
-              FadeTransition(
-                opacity: _verse2FadeAnimation,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                      vertical: versePaddingVertical,
-                      horizontal: versePaddingHorizontal),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.03),
-                    borderRadius: BorderRadius.circular(verseBorderRadius),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          "Trust in the Lord with all your heart and lean not on your own understanding.  ",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.robotoSlab(
-                            textStyle: TextStyle(
-                              fontSize: verseFontSize,
-                              color: Colors.white,
-                              fontStyle: FontStyle.normal,
-                              shadows: [
-                                 Shadow(
-                                    color: const Color.fromARGB(255, 192, 136, 45),
-                                    blurRadius: screenWidth * 0.005,
-                                    offset: Offset(screenWidth * 0.0025,
-                                        screenWidth * 0.0025)),
-                              ],
-                            ),
-                          ),
+              // Button Section
+              Padding(
+                padding: EdgeInsets.only(
+                    bottom: screenHeight *
+                        0.15), // Position button 15% from the bottom
+                child: AnimatedBuilder(
+                  animation: _buttonGlowAnimationController,
+                  builder: (context, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        boxShadow: _allVersesVisible
+                            ? [
+                                BoxShadow(
+                                  color: AppTheme.accentGold.withAlpha((80 +
+                                          80 *
+                                              _buttonGlowAnimationController
+                                                  .value)
+                                      .toInt()),
+                                  blurRadius: 15 *
+                                      _buttonGlowAnimationController.value,
+                                  spreadRadius: 4 *
+                                      _buttonGlowAnimationController.value,
+                                )
+                              ]
+                            : null,
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _allVersesVisible
+                            ? () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const WordOfGodScreen()));
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: _allVersesVisible
+                              ? AppTheme.godTheFather
+                              : Colors.grey.shade700,
+                          backgroundColor: _allVersesVisible
+                              ? AppTheme.maryWhite
+                              : Colors.grey.shade400,
+                          elevation: _allVersesVisible ? 8 : 2,
+                          shadowColor: _allVersesVisible
+                              ? AppTheme.accentGold.withOpacity(0.8)
+                              : Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(buttonBorderRadius)),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: buttonPaddingHorizontal,
+                              vertical: buttonPaddingVertical),
                         ),
+                        child: Text("Receive the Word of God",
+                            style: TextStyle(
+                                fontSize: buttonFontSize,
+                                fontWeight: FontWeight.bold)),
                       ),
-                      Tooltip(
-                        message: "Proverbs 3:5-6",
-                        waitDuration: Duration.zero,
-                        showDuration: const Duration(seconds: 2),
-                        child: Icon(Icons.info_outline,
-                            color: Colors.white, size: citationIconSize),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              ),
-              SizedBox(height: verseSpacingVertical),
-
-              // Verse 3
-              FadeTransition(
-                opacity: _verse3FadeAnimation,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                      vertical: versePaddingVertical,
-                      horizontal: versePaddingHorizontal),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.03),
-                    borderRadius: BorderRadius.circular(verseBorderRadius),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          "I love You, O Lord, and for Your sake, I love my neighbor as myself.  ",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.robotoSlab(
-                            textStyle: TextStyle(
-                              fontSize: verseFontSize,
-                              color: Colors.white,
-                              fontStyle: FontStyle.normal,
-                              shadows: [
-                                 Shadow(
-                                    color: const Color.fromARGB(255, 192, 136, 45),
-                                    blurRadius: screenWidth * 0.005,
-                                    offset: Offset(screenWidth * 0.0025,
-                                        screenWidth * 0.0025)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Tooltip(
-                        message: "Matthew 22:37-40",
-                        waitDuration: Duration.zero,
-                        showDuration: const Duration(seconds: 2),
-                        child: Icon(Icons.info_outline,
-                            color: Colors.white, size: citationIconSize),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: buttonSpacingVertical),
-
-              // Button
-              AnimatedBuilder(
-                animation: _buttonGlowAnimationController,
-                builder: (context, child) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      boxShadow: _allVersesVisible
-                          ? [
-                              BoxShadow(
-                                color: AppTheme.accentGold.withAlpha((80 +
-                                        80 *
-                                            _buttonGlowAnimationController
-                                                .value)
-                                    .toInt()),
-                                blurRadius: 15 *
-                                    _buttonGlowAnimationController.value,
-                                spreadRadius: 4 *
-                                    _buttonGlowAnimationController.value,
-                              )
-                            ]
-                          : null,
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _allVersesVisible
-                          ? () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const WordOfGodScreen()));
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: _allVersesVisible
-                            ? AppTheme.godTheFather
-                            : Colors.grey.shade700,
-                        backgroundColor: _allVersesVisible
-                            ? AppTheme.maryWhite
-                            : Colors.grey.shade400,
-                        elevation: _allVersesVisible ? 8 : 2,
-                        shadowColor: _allVersesVisible
-                            ? AppTheme.accentGold.withOpacity(0.8)
-                            : Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(buttonBorderRadius)),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: buttonPaddingHorizontal,
-                            vertical: buttonPaddingVertical),
-                      ),
-                      child: Text("Receive the Word of God",
-                          style: TextStyle(
-                              fontSize: buttonFontSize, fontWeight: FontWeight.bold)),
-                    ),
-                  );
-                },
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Helper method to build verse containers
+  Widget _buildVerseContainer({
+    required String verseText,
+    required String citation,
+    required double verseFontSize,
+    required double versePaddingVertical,
+    required double versePaddingHorizontal,
+    required double verseBorderRadius,
+    required double citationIconSize,
+    required double screenWidth,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          vertical: versePaddingVertical, horizontal: versePaddingHorizontal),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(verseBorderRadius),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Text(
+              "$verseText  ", // added extra space
+              textAlign: TextAlign.center,
+              style: GoogleFonts.robotoSlab(
+                textStyle: TextStyle(
+                  fontSize: verseFontSize,
+                  color: Colors.white,
+                  fontStyle: FontStyle.normal,
+                   shadows: [
+                                 Shadow(
+                                    color: const Color.fromARGB(255, 192, 136, 45),
+                                    blurRadius: screenWidth * 0.005,
+                                    offset: Offset(screenWidth * 0.0025,
+                                        screenWidth * 0.0025)),
+                              ],
+                ),
+              ),
+            ),
+          ),
+          Tooltip(
+            message: citation,
+            waitDuration: Duration.zero,
+            showDuration: const Duration(seconds: 3),
+            child: Icon(Icons.info_outline,
+                color: Colors.white, size: citationIconSize),
+          ),
+        ],
       ),
     );
   }
