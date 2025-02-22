@@ -92,7 +92,11 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
 
     // Verses
     final double verseFontSize = screenWidth * 0.065;
-    final double versePaddingVertical = screenHeight * 0.012;
+    // Conditional padding and spacing
+    final double versePaddingVertical =
+        screenHeight * (screenWidth < 350 ? 0.015 : 0.01);
+    final double verseSpacing =
+        screenHeight * (screenWidth < 350 ? 0.01 : 0.005);
     final double versePaddingHorizontal = screenWidth * 0.03;
     final double verseBorderRadius = screenWidth * 0.025;
 
@@ -147,63 +151,69 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
               ),
 
               // Verses Section (Wrapped in Expanded)
-              Expanded(
+              Expanded( // Expanded for dynamic sizing
                 child: SingleChildScrollView(
-                   padding: EdgeInsets.only(
-                        left: screenWidth * 0.06,
-                        right: screenWidth * 0.06,
-                        top: screenHeight * 0.005, // Reduce top padding a little
-                        bottom: 0),
+                  padding: EdgeInsets.only(
+                      left: screenWidth * 0.06,
+                      right: screenWidth * 0.06,
+                      top: screenHeight * 0.005, // Reduce top padding a little
+                      bottom: 0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Verse 1
-                      FadeTransition(
-                        opacity: _verse1FadeAnimation,
-                        child: _buildVerseContainer(
-                          verseText:
-                              "Cast all your anxieties on Him, for He cares for you.",
-                          citation: "1 Peter 5:7",
-                          verseFontSize: verseFontSize,
-                          versePaddingVertical: versePaddingVertical,
-                          versePaddingHorizontal: versePaddingHorizontal,
-                          verseBorderRadius: verseBorderRadius,
-                          citationIconSize: citationIconSize,
-                          screenWidth: screenWidth,
+                      Flexible( // Flexible wrapper
+                        child: FadeTransition(
+                          opacity: _verse1FadeAnimation,
+                          child: _buildVerseContainer(
+                            verseText:
+                                "Cast all your anxieties on Him, for He cares for you.",
+                            citation: "1 Peter 5:7",
+                            verseFontSize: verseFontSize,
+                            versePaddingVertical: versePaddingVertical,
+                            versePaddingHorizontal: versePaddingHorizontal,
+                            verseBorderRadius: verseBorderRadius,
+                            citationIconSize: citationIconSize,
+                            screenWidth: screenWidth,
+                          ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.0075), // Slightly increased
+                      SizedBox(height: verseSpacing), // Conditional spacing
 
                       // Verse 2
-                      FadeTransition(
-                        opacity: _verse2FadeAnimation,
-                        child: _buildVerseContainer(
-                          verseText:
-                              "Trust in the Lord with all your heart and lean not on your own understanding.",
-                          citation: "Proverbs 3:5-6",
-                          verseFontSize: verseFontSize,
-                          versePaddingVertical: versePaddingVertical,
-                          versePaddingHorizontal: versePaddingHorizontal,
-                          verseBorderRadius: verseBorderRadius,
-                          citationIconSize: citationIconSize,
-                          screenWidth: screenWidth,
+                      Flexible( // Flexible wrapper
+                        child: FadeTransition(
+                          opacity: _verse2FadeAnimation,
+                          child: _buildVerseContainer(
+                            verseText:
+                                "Trust in the Lord with all your heart and lean not on your own understanding.",
+                            citation: "Proverbs 3:5-6",
+                            verseFontSize: verseFontSize,
+                            versePaddingVertical: versePaddingVertical,
+                            versePaddingHorizontal: versePaddingHorizontal,
+                            verseBorderRadius: verseBorderRadius,
+                            citationIconSize: citationIconSize,
+                            screenWidth: screenWidth,
+                          ),
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.0075), // Slightly increased
+                      SizedBox(height: verseSpacing), // Conditional spacing
 
                       // Verse 3
-                      FadeTransition(
-                        opacity: _verse3FadeAnimation,
-                        child: _buildVerseContainer(
-                          verseText:
-                              "I love You, O Lord, and for Your sake, I love my neighbor as myself.",
-                          citation: "Matthew 22:37-40",
-                          verseFontSize: verseFontSize,
-                          versePaddingVertical: versePaddingVertical,
-                          versePaddingHorizontal: versePaddingHorizontal,
-                          verseBorderRadius: verseBorderRadius,
-                          citationIconSize: citationIconSize,
-                          screenWidth: screenWidth,
+                      Flexible( // Flexible wrapper
+                        child: FadeTransition(
+                          opacity: _verse3FadeAnimation,
+                          child: _buildVerseContainer(
+                            verseText:
+                                "I love You, O Lord, and for Your sake, I love my neighbor as myself.",
+                            citation: "Matthew 22:37-40",
+                            verseFontSize: verseFontSize,
+                            versePaddingVertical: versePaddingVertical,
+                            versePaddingHorizontal: versePaddingHorizontal,
+                            verseBorderRadius: verseBorderRadius,
+                            citationIconSize: citationIconSize,
+                            screenWidth: screenWidth,
+                          ),
                         ),
                       ),
                     ],
@@ -222,15 +232,18 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                         boxShadow: _allVersesVisible  // Use the flag here
                             ? [
                                 BoxShadow(
-                                   color: AppTheme.accentGold.withAlpha((60 + //Reduced Alpha
-                          60 *  //Reduced Alpha
-                              _buttonGlowAnimationController
-                                  .value)
-                      .toInt()),
-                  blurRadius: 10 * // Reduced blur
-                      _buttonGlowAnimationController.value,
-                  spreadRadius: 2 * // Reduced spread
-                      _buttonGlowAnimationController.value,
+                                  color: AppTheme.accentGold
+                                      .withAlpha((60 + //Reduced Alpha
+                                          60 * //Reduced Alpha
+                                              _buttonGlowAnimationController
+                                                  .value)
+                                      .toInt()),
+                                  blurRadius:
+                                      10 * // Reduced blur
+                                          _buttonGlowAnimationController.value,
+                                  spreadRadius:
+                                      2 * // Reduced spread
+                                          _buttonGlowAnimationController.value,
                                 )
                               ]
                             : null,
@@ -294,7 +307,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
       padding: EdgeInsets.symmetric(
           vertical: versePaddingVertical, horizontal: versePaddingHorizontal),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.03),
+        color: Colors.black.withOpacity(screenWidth < 350 ? 0.04 : 0.02), // Conditional, lighter color
         borderRadius: BorderRadius.circular(verseBorderRadius),
         border: Border( // Add the left border
           left: BorderSide(
@@ -324,6 +337,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                   fontSize: verseFontSize,
                   color: Colors.white,
                   fontStyle: FontStyle.normal,
+                  // fontWeight: FontWeight.bold, // Removed bold
                   shadows: [
                     Shadow(
                         color: const Color.fromARGB(255, 192, 136, 45),
