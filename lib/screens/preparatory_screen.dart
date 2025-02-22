@@ -234,17 +234,21 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                           child: _buildVerseContainer(
                             verseText: _isFirstLaunch
                                 ? "Cast all your anxieties on Him, for He cares for you."
-                                : _verseSets![_currentVerseSetIndex][0]['text']!,
+                                : (_verseSets != null
+                                ? _verseSets![_currentVerseSetIndex][0]['text']!
+                                : "" ),
                             citation: _isFirstLaunch
                                 ? "1 Peter 5:7"
-                                : _verseSets![_currentVerseSetIndex][0][
-                                    'citation']!,
+                                : (_verseSets != null
+                                ? _verseSets![_currentVerseSetIndex][0]['citation']!
+                                : "" ),
                             verseFontSize: verseFontSize,
                             versePaddingVertical: versePaddingVertical,
                             versePaddingHorizontal: versePaddingHorizontal,
                             verseBorderRadius: verseBorderRadius,
                             citationIconSize: citationIconSize,
                             screenWidth: screenWidth,
+                            verseIndex: 0, // Pass index 0
                           ),
                         ),
                       ),
@@ -257,17 +261,21 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                           child: _buildVerseContainer(
                             verseText: _isFirstLaunch
                                 ? "Trust in the Lord with all your heart and lean not on your own understanding."
-                                : _verseSets![_currentVerseSetIndex][1]['text']!,
+                                : (_verseSets != null
+                                ? _verseSets![_currentVerseSetIndex][1]['text']!
+                                : "" ),
                             citation: _isFirstLaunch
                                 ? "Proverbs 3:5-6"
-                                : _verseSets![_currentVerseSetIndex][1][
-                                    'citation']!,
+                                : (_verseSets != null
+                                ? _verseSets![_currentVerseSetIndex][1]['citation']!
+                                : "" ),
                             verseFontSize: verseFontSize,
                             versePaddingVertical: versePaddingVertical,
                             versePaddingHorizontal: versePaddingHorizontal,
                             verseBorderRadius: verseBorderRadius,
                             citationIconSize: citationIconSize,
                             screenWidth: screenWidth,
+                            verseIndex: 1, // Pass index 1
                           ),
                         ),
                       ),
@@ -280,17 +288,21 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                           child: _buildVerseContainer(
                             verseText: _isFirstLaunch
                                 ? "I love You, O Lord, and for Your sake, I love my neighbor as myself."
-                                : _verseSets![_currentVerseSetIndex][2]['text']!,
+                                : (_verseSets != null
+                                ? _verseSets![_currentVerseSetIndex][2]['text']!
+                                : "" ),
                             citation: _isFirstLaunch
                                 ? "Matthew 22:37-40"
-                                : _verseSets![_currentVerseSetIndex][2][
-                                    'citation']!,
+                                : (_verseSets != null
+                                ? _verseSets![_currentVerseSetIndex][2]['citation']!
+                                : "" ),
                             verseFontSize: verseFontSize,
                             versePaddingVertical: versePaddingVertical,
                             versePaddingHorizontal: versePaddingHorizontal,
                             verseBorderRadius: verseBorderRadius,
                             citationIconSize: citationIconSize,
                             screenWidth: screenWidth,
+                            verseIndex: 2, // Pass index 2
                           ),
                         ),
                       ),
@@ -370,7 +382,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
     );
   }
 
-  // Helper method to build verse containers
+// Helper method to build verse containers
   Widget _buildVerseContainer({
     required String verseText,
     required String citation,
@@ -380,6 +392,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
     required double verseBorderRadius,
     required double citationIconSize,
     required double screenWidth,
+    required int verseIndex, // Add verseIndex parameter
   }) {
     return Container(
       padding: EdgeInsets.symmetric(
@@ -411,7 +424,12 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
         children: [
           Expanded(
             child: Text(
-              verseText,
+              // Use a conditional expression to handle null _verseSets
+              _isFirstLaunch
+                  ? verseText // Use the passed-in verseText on first launch
+                  : (_verseSets != null
+                      ? _verseSets![_currentVerseSetIndex][verseIndex]['text']! // Use verseIndex
+                      : ""), // Use empty string if _verseSets is null
               textAlign: TextAlign.center,
               style: GoogleFonts.robotoSlab(
                 textStyle: TextStyle(
@@ -431,7 +449,11 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
             ),
           ),
           Tooltip(
-            message: citation,
+            message: _isFirstLaunch
+                ? citation // Use the passed-in citation on first launch
+                : (_verseSets != null
+                    ? _verseSets![_currentVerseSetIndex][verseIndex]['citation']! // Use verseIndex
+                    : ""),
             waitDuration: Duration.zero,
             showDuration: const Duration(seconds: 3),
             child: Icon(Icons.info_outline,
