@@ -1,17 +1,64 @@
 [
+  [
+    {"text": "Cast all your anxieties on Him, for He cares for you.", "citation": "1 Peter 5:7"},
+    {"text": "Trust in the Lord with all your heart and lean not on your own understanding.", "citation": "Proverbs 3:5-6"},
+    {"text": "I love You, O Lord, and for Your sake, I love my neighbor as myself.", "citation": "Matthew 22:37-40"}
+  ],
+  [
+    {"text": "Cast your burden on the Lord, and He will sustain you.", "citation": "Psalm 55:22"},
+    {"text": "Trust in Him at all times; pour out your hearts to Him, for God is our refuge.", "citation": "Psalm 62:8"},
+    {"text": "Love the Lord your God with all your heart and with all your soul and with all your strength.", "citation": "Deuteronomy 6:5"}
+  ],
+  [
+    {"text": "When the cares of my heart are many, Your consolations cheer my soul.", "citation": "Psalm 94:19"},
+    {"text": "In God, whose word I praise, in God I trust; I shall not be afraid.", "citation": "Psalm 56:4"},
+    {"text": "Let us love one another, for love comes from God. Everyone who loves has been born of God and knows God.", "citation": "1 John 4:7"}
+  ],
+  [
+    {"text": "Jesus said, 'Come to me, all you who are weary and burdened, and I will give you rest.'", "citation": "Matthew 11:28"},
+    {"text": "Commit your way to the Lord; trust in Him and He will do this.", "citation": "Psalm 37:5"},
+    {"text": "Jesus said, 'My command is this: Love each other as I have loved you.'", "citation": "John 15:12"}
+  ],
+  [
+    {
+      "text": "Do not be anxious about anything, but in every situation, by prayer and supplication, with thanksgiving, present your requests to God...",
+      "citation": "Philippians 4:6-7"
+    },
+    {
+      "text": "The Lord is my strength and my shield; my heart trusts in Him, and He helps me.",
+      "citation": "Psalm 28:7"
+    },
+    {
+      "text": "'Love the Lord your God with all your heart and with all your soul and with all your mind and with all your strength.'",
+      "citation": "Mark 12:30"
+    }
+  ],
+  [
+    {
+      "text": "Be still, and know that I am God.",
+      "citation": "Psalm 46:10"
+    },
+    {
+      "text": "Trust in the Lord forever, for the Lord, the Lord Himself, is the Rock eternal.",
+      "citation": "Isaiah 26:3-4"
+    },
+    {
+      "text": "Jesus said, 'A new command I give you: Love one another. As I have loved you, so you must love one another.'",
+      "citation": "John 13:34"
+    }
+  ],
     [
-      {"text": "Cast all your anxieties on Him, for He cares for you.", "citation": "1 Peter 5:7"},
-      {"text": "Trust in the Lord with all your heart and lean not on your own understanding.", "citation": "Proverbs 3:5-6"},
-      {"text": "I love You, O Lord, and for Your sake, I love my neighbor as myself.", "citation": "Matthew 22:37-40"}
-    ],
-    [
-      {"text": "Cast your burden on the Lord, and He will sustain you.", "citation": "Psalm 55:22"},
-      {"text": "Trust in Him at all times, you people; pour out your hearts to Him, for God is our refuge.", "citation": "Psalm 62:8"},
-      {"text": "Love the Lord, your God, with all your heart, and with all your soul, and with all your strength.", "citation": "Deut "}
-    ],
-    [
-      {"text": "When the cares of my heart are many, Your consolations cheer my soul.", "citation": "Psalm 94:19"},
-      {"text": "In God, whose word I praise, in God I trust; I shall not be afraid", "citation": "Psalm 56:3-4"},
-      {"text": "Love comes from God. Everyone who loves has been born of God and knows God. ", "citation": "Colossians 3:14"}
-    ]
+    {
+      "text": "The righteous cry out, and the Lord hears them; He delivers them from all their troubles.",
+      "citation": "Psalm 34:17-18"
+    },
+    {
+      "text": "Those who know Your name trust in You, for You, Lord, have never forsaken those who seek You.",
+      "citation": "Psalm 9:10"
+    },
+    {
+      "text": "Dear children, let us not love with words or speech but with actions and in truth.",
+      "citation": "1 John 3:18"
+    }
   ]
+]
