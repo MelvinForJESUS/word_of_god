@@ -149,11 +149,11 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
               // Verses Section (Wrapped in Expanded)
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.only(
-                      left: screenWidth * 0.06,
-                      right: screenWidth * 0.06,
-                      top: screenHeight * 0.01,
-                      bottom: 0),
+                   padding: EdgeInsets.only(
+                        left: screenWidth * 0.06,
+                        right: screenWidth * 0.06,
+                        top: screenHeight * 0.005, // Reduce top padding a little
+                        bottom: 0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -172,7 +172,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                           screenWidth: screenWidth,
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.005),
+                      SizedBox(height: screenHeight * 0.0075), // Slightly increased
 
                       // Verse 2
                       FadeTransition(
@@ -189,7 +189,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                           screenWidth: screenWidth,
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.005),
+                      SizedBox(height: screenHeight * 0.0075), // Slightly increased
 
                       // Verse 3
                       FadeTransition(
@@ -222,16 +222,15 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                         boxShadow: _allVersesVisible  // Use the flag here
                             ? [
                                 BoxShadow(
-                                  color: AppTheme.accentGold.withAlpha(
-                                      (80 +
-                                              80 *
-                                                  _buttonGlowAnimationController
-                                                      .value)
-                                          .toInt()),
-                                  blurRadius: 15 *
-                                      _buttonGlowAnimationController.value,
-                                  spreadRadius: 4 *
-                                      _buttonGlowAnimationController.value,
+                                   color: AppTheme.accentGold.withAlpha((60 + //Reduced Alpha
+                          60 *  //Reduced Alpha
+                              _buttonGlowAnimationController
+                                  .value)
+                      .toInt()),
+                  blurRadius: 10 * // Reduced blur
+                      _buttonGlowAnimationController.value,
+                  spreadRadius: 2 * // Reduced spread
+                      _buttonGlowAnimationController.value,
                                 )
                               ]
                             : null,
@@ -299,8 +298,8 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
         borderRadius: BorderRadius.circular(verseBorderRadius),
         border: Border( // Add the left border
           left: BorderSide(
-            color: AppTheme.accentGold.withOpacity(0.7), // Customize color
-            width: screenWidth * 0.008, // Customize thickness
+            color: AppTheme.accentGold.withOpacity(0.7),
+            width: screenWidth * 0.005, // Reduced thickness
           ),
         ),
         boxShadow: [ // Original, light shadow
