@@ -1,4 +1,4 @@
-// preparatory_screen.dart !
+// preparatory_screen.dart
 // ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously, deprecated_member_use
 // God is Love
 
@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'word_of_god_screen.dart';
 import '../utils/theme.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 
 class PreparatoryScreen extends StatefulWidget {
   const PreparatoryScreen({super.key});
@@ -23,7 +26,11 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
   late AnimationController _verse3AnimationController;
   late Animation<double> _verse3FadeAnimation;
   late AnimationController _buttonGlowAnimationController;
-  bool _allVersesVisible = false; // Keep this flag
+  bool _allVersesVisible = false;
+
+  List<List<Map<String, String>>>? _verseSets; // Nullable
+  int _currentVerseSetIndex = 0;
+  bool _isFirstLaunch = true;
 
   @override
   void initState() {
@@ -47,7 +54,60 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
         AnimationController(vsync: this, duration: const Duration(seconds: 2))
           ..repeat(reverse: true);
 
-    _startVerseAnimations();
+    _initData(); // Load JSON and check first launch
+  }
+
+  // Combined initialization function
+  Future<void> _initData() async {
+    await _loadData(); // Await data loading
+    _startVerseAnimations(); // Start animations *after* data is loaded
+  }
+
+  Future<void> _loadData() async {
+    // Load JSON
+    final String jsonString =
+        await rootBundle.loadString('assets/verse_sets.json');
+    final List<dynamic> decodedList = jsonDecode(jsonString);
+
+    // Check if decoding was successful and the result is a list
+    if (decodedList is List) {
+      // Cast each item in the outer list to List<Map<String, String>>
+      _verseSets = decodedList
+          .map((verseSet) {
+            if (verseSet is List) {
+              return verseSet
+                  .map((verse) {
+                    if (verse is Map) {
+                      // Convert Map<dynamic, dynamic> to Map<String, String>
+                      return verse.map((key, value) =>
+                          MapEntry(key.toString(), value.toString()));
+                    }
+                    return <String, String>{}; // Return an empty map if not a Map
+                  })
+                  .toList();
+            }
+            return <Map<String, String>>[]; // Return an empty list if not a List
+          })
+          .toList();
+    } else {
+      // Handle the case where the decoded result is not a list
+      _verseSets =
+          []; // Initialize to an empty list or handle the error appropriately
+    }
+
+    // SharedPreferences
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final bool? hasLaunched = prefs.getBool('hasLaunched');
+
+    if (hasLaunched == null) {
+      // First launch
+      _isFirstLaunch = true;
+      await prefs.setBool('hasLaunched', true);
+    } else {
+      _isFirstLaunch = false;
+      _currentVerseSetIndex = prefs.getInt('currentVerseSetIndex') ?? 0;
+    }
+    // No setState here!
   }
 
   Future<void> _startVerseAnimations() async {
@@ -63,8 +123,14 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       _allVersesVisible = true; // Set the flag to true!
+      // Update verse set index for next launch
+      if (!_isFirstLaunch) {
+        _currentVerseSetIndex = (_currentVerseSetIndex + 1) % _verseSets!.length;
+        prefs.setInt('currentVerseSetIndex', _currentVerseSetIndex);
+      }
     });
   }
 
@@ -166,9 +232,13 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                         child: FadeTransition(
                           opacity: _verse1FadeAnimation,
                           child: _buildVerseContainer(
-                            verseText:
-                                "Cast all your anxieties on Him, for He cares for you.",
-                            citation: "1 Peter 5:7",
+                            verseText: _isFirstLaunch
+                                ? "Cast all your anxieties on Him, for He cares for you."
+                                : _verseSets![_currentVerseSetIndex][0]['text']!,
+                            citation: _isFirstLaunch
+                                ? "1 Peter 5:7"
+                                : _verseSets![_currentVerseSetIndex][0][
+                                    'citation']!,
                             verseFontSize: verseFontSize,
                             versePaddingVertical: versePaddingVertical,
                             versePaddingHorizontal: versePaddingHorizontal,
@@ -185,9 +255,13 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                         child: FadeTransition(
                           opacity: _verse2FadeAnimation,
                           child: _buildVerseContainer(
-                            verseText:
-                                "Trust in the Lord with all your heart and lean not on your own understanding.",
-                            citation: "Proverbs 3:5-6",
+                            verseText: _isFirstLaunch
+                                ? "Trust in the Lord with all your heart and lean not on your own understanding."
+                                : _verseSets![_currentVerseSetIndex][1]['text']!,
+                            citation: _isFirstLaunch
+                                ? "Proverbs 3:5-6"
+                                : _verseSets![_currentVerseSetIndex][1][
+                                    'citation']!,
                             verseFontSize: verseFontSize,
                             versePaddingVertical: versePaddingVertical,
                             versePaddingHorizontal: versePaddingHorizontal,
@@ -204,9 +278,13 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                         child: FadeTransition(
                           opacity: _verse3FadeAnimation,
                           child: _buildVerseContainer(
-                            verseText:
-                                "I love You, O Lord, and for Your sake, I love my neighbor as myself.",
-                            citation: "Matthew 22:37-40",
+                            verseText: _isFirstLaunch
+                                ? "I love You, O Lord, and for Your sake, I love my neighbor as myself."
+                                : _verseSets![_currentVerseSetIndex][2]['text']!,
+                            citation: _isFirstLaunch
+                                ? "Matthew 22:37-40"
+                                : _verseSets![_currentVerseSetIndex][2][
+                                    'citation']!,
                             verseFontSize: verseFontSize,
                             versePaddingVertical: versePaddingVertical,
                             versePaddingHorizontal: versePaddingHorizontal,
@@ -229,7 +307,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                   builder: (context, child) {
                     return Container(
                       decoration: BoxDecoration(
-                        boxShadow: _allVersesVisible  // Use the flag here
+                        boxShadow: _allVersesVisible // Use the flag here
                             ? [
                                 BoxShadow(
                                   color: AppTheme.accentGold
@@ -307,15 +385,18 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
       padding: EdgeInsets.symmetric(
           vertical: versePaddingVertical, horizontal: versePaddingHorizontal),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(screenWidth < 350 ? 0.04 : 0.02), // Conditional, lighter color
+        color: Colors.black
+            .withOpacity(screenWidth < 350 ? 0.04 : 0.02), // Conditional, lighter color
         borderRadius: BorderRadius.circular(verseBorderRadius),
-        border: Border( // Add the left border
+        border: Border(
+          // Add the left border
           left: BorderSide(
             color: AppTheme.accentGold.withOpacity(0.7),
             width: screenWidth * 0.005, // Reduced thickness
           ),
         ),
-        boxShadow: [ // Original, light shadow
+        boxShadow: [
+          // Original, light shadow
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
             blurRadius: screenWidth * 0.005,
@@ -330,7 +411,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
         children: [
           Expanded(
             child: Text(
-              "$verseText  ",
+              verseText,
               textAlign: TextAlign.center,
               style: GoogleFonts.robotoSlab(
                 textStyle: TextStyle(
@@ -342,8 +423,8 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                     Shadow(
                         color: const Color.fromARGB(255, 192, 136, 45),
                         blurRadius: screenWidth * 0.005,
-                        offset:
-                            Offset(screenWidth * 0.0025, screenWidth * 0.0025)),
+                        offset: Offset(
+                            screenWidth * 0.0025, screenWidth * 0.0025)),
                   ],
                 ),
               ),
