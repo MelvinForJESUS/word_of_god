@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 import 'word_of_god_screen.dart';
 import '../utils/theme.dart';
 import 'dart:convert';
@@ -27,9 +28,8 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
   late Animation<double> _verse3FadeAnimation;
   late AnimationController _buttonGlowAnimationController;
 
-  List<List<Map<String, String>>>? _verseSets; // Nullable
+  List<List<Map<String, String>>>? _verseSets;
   int _currentVerseSetIndex = 0;
-
 
   @override
   void initState() {
@@ -66,15 +66,15 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
     // Load JSON
     final String jsonString =
         await rootBundle.loadString('assets/verse_sets.json');
-    final List<dynamic> decodedList = jsonDecode(jsonString);
+    final dynamic decodedList = jsonDecode(jsonString); // No need to specify List<dynamic> here
 
     // Check if decoding was successful and the result is a list
-    if (decodedList is List) {
+    if (decodedList is List) { // Simpler check
       // Cast each item in the outer list to List<Map<String, String>>
-      _verseSets = decodedList
+      _verseSets = (decodedList) // No need for another is List check here, already checked above
           .map((verseSet) {
             if (verseSet is List) {
-              return verseSet
+              return (verseSet) // No need for another is List check here
                   .map((verse) {
                     if (verse is Map) {
                       // Convert Map<dynamic, dynamic> to Map<String, String>
@@ -88,29 +88,29 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
             return <Map<String, String>>[]; // Return an empty list if not a List
           })
           .toList();
+
+      // print("Parsed _verseSets: $_verseSets"); // DEBUG PRINT - Consider using a logger instead of print in production
     } else {
       // Handle the case where the decoded result is not a list
       _verseSets =
           []; // Initialize to an empty list or handle the error appropriately
+      // print("Error: Decoded JSON is not a list."); // DEBUG PRINT - Consider using a logger instead of print in production
     }
 
     // SharedPreferences
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     // Always load the index, even on the "first" launch.  If it doesn't exist, it defaults to 0.
     _currentVerseSetIndex = prefs.getInt('currentVerseSetIndex') ?? 0;
+    // print("Loaded _currentVerseSetIndex: $_currentVerseSetIndex"); //DEBUG PRINT - Consider using a logger instead of print in production
   }
 
-
-    @override
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-        // Start animations *here*, in didChangeDependencies, *after* the first build.
-        // This ensures that the widget is fully built and mounted.
-        _startVerseAnimations();
-
+    // Start animations *here*, in didChangeDependencies, *after* the first build.
+    // This ensures that the widget is fully built and mounted.
+    _startVerseAnimations();
   }
-
-
 
   Future<void> _startVerseAnimations() async {
     // No need to check mounted here; didChangeDependencies only runs if mounted.
@@ -126,7 +126,13 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
     // No need for setState here!
 
     // Always increment and save the index.
-    _currentVerseSetIndex = (_currentVerseSetIndex + 1) % _verseSets!.length; // Use null-aware operator
+    if (_verseSets != null && _verseSets!.isNotEmpty) { // Use isNotEmpty
+      _currentVerseSetIndex = (_currentVerseSetIndex + 1) % _verseSets!.length;
+    } else {
+      _currentVerseSetIndex = 0; // Reset if _verseSets is null or empty.
+    }
+
+    // print("Saving _currentVerseSetIndex: $_currentVerseSetIndex"); //DEBUG PRINT - Consider using a logger instead of print in production
     await prefs.setInt('currentVerseSetIndex', _currentVerseSetIndex); //Save it using await
   }
 
@@ -154,8 +160,10 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
 
     // Verses
     final double verseFontSize = screenWidth * 0.065;
-    final double versePaddingVertical = screenHeight * (screenWidth < 350 ? 0.015 : 0.01);
-    final double verseSpacing = screenHeight * (screenWidth < 350 ? 0.01 : 0.005);
+    final double versePaddingVertical =
+        screenHeight * (screenWidth < 350 ? 0.015 : 0.01);
+    final double verseSpacing =
+        screenHeight * (screenWidth < 350 ? 0.01 : 0.005);
     final double versePaddingHorizontal = screenWidth * 0.03;
     final double verseBorderRadius = screenWidth * 0.025;
 
@@ -169,210 +177,246 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
     final double buttonBorderRadius = screenWidth * 0.03;
 
     return Scaffold(
-      body: FutureBuilder<void>(
-        future: Future.value(_initData()), // Use Future.value
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            // Data loading is complete, build the UI
-            return Container(
-              width: screenWidth,
-              height: screenHeight,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.godTheFather,
-                    AppTheme.churchPurple,
-                    AppTheme.maryBlue
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomRight,
+      body: DoubleBackToCloseApp(
+        snackBar: const SnackBar(
+          content: Text('Tap back again to leave'),
+        ),
+        child: FutureBuilder<void>(
+          future: _initData(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return Container(
+                width: screenWidth,
+                height: screenHeight,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.godTheFather,
+                      AppTheme.churchPurple,
+                      AppTheme.maryBlue
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Title Section
-                    Padding(
-                      padding: EdgeInsets.only(
-                          top: titleTopSpacingVertical * 0.8,
-                          bottom: titleBottomSpacingVertical),
-                      child: Text(
-                        "Verses to Meditate",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'RobotoSlab',
-                          fontSize: titleFontSize,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                                blurRadius: titleShadowBlurRadius,
-                                color: Colors.black26,
-                                offset: Offset(titleShadowOffset, titleShadowOffset))
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Verses Section (Wrapped in Expanded)
-                    Expanded( // Wrap with Expanded
-                      child: SingleChildScrollView(
+                child: SafeArea(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
                         padding: EdgeInsets.only(
-                            left: screenWidth * 0.06,
-                            right: screenWidth * 0.06,
-                            top: screenHeight * 0.005,
-                            bottom: 0),
-                        child: Column( // This Column is now the problem
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Verse 1
-                            FadeTransition(
-                              opacity: _verse1FadeAnimation,
-                              child: _buildVerseContainer(
-                                verseText: (_verseSets != null
-                                    ? _verseSets![_currentVerseSetIndex][0]['text']!
-                                    : ""),
-                                citation: (_verseSets != null
-                                    ? _verseSets![_currentVerseSetIndex][0]['citation']!
-                                    : ""),
-                                verseFontSize: verseFontSize,
-                                versePaddingVertical: versePaddingVertical,
-                                versePaddingHorizontal: versePaddingHorizontal,
-                                verseBorderRadius: verseBorderRadius,
-                                citationIconSize: citationIconSize,
-                                screenWidth: screenWidth,
-                                verseIndex: 0,
-                              ),
-                            ),
-                            SizedBox(height: verseSpacing), // Use SizedBox for spacing
-
-                            // Verse 2
-                            FadeTransition(
-                              opacity: _verse2FadeAnimation,
-                              child: _buildVerseContainer(
-                                verseText: (_verseSets != null
-                                    ? _verseSets![_currentVerseSetIndex][1]['text']!
-                                    : ""),
-                                citation: (_verseSets != null
-                                    ? _verseSets![_currentVerseSetIndex][1]['citation']!
-                                    : ""),
-                                verseFontSize: verseFontSize,
-                                versePaddingVertical: versePaddingVertical,
-                                versePaddingHorizontal: versePaddingHorizontal,
-                                verseBorderRadius: verseBorderRadius,
-                                citationIconSize: citationIconSize,
-                                screenWidth: screenWidth,
-                                verseIndex: 1,
-                              ),
-                            ),
-                            SizedBox(height: verseSpacing),
-
-                            // Verse 3
-                            FadeTransition(
-                              opacity: _verse3FadeAnimation,
-                              child: _buildVerseContainer(
-                                verseText: (_verseSets != null
-                                    ? _verseSets![_currentVerseSetIndex][2]['text']!
-                                    : ""),
-                                citation: (_verseSets != null
-                                    ? _verseSets![_currentVerseSetIndex][2]['citation']!
-                                    : ""),
-                                verseFontSize: verseFontSize,
-                                versePaddingVertical: versePaddingVertical,
-                                versePaddingHorizontal: versePaddingHorizontal,
-                                verseBorderRadius: verseBorderRadius,
-                                citationIconSize: citationIconSize,
-                                screenWidth: screenWidth,
-                                verseIndex: 2,
-                              ),
-                            ),
-                            // SizedBox(height: verseSpacing), // Consistent spacing - No need for this final one
-                          ],
+                            top: titleTopSpacingVertical * 0.8,
+                            bottom: titleBottomSpacingVertical),
+                        child: Text(
+                          "Verses to Meditate",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'RobotoSlab',
+                            fontSize: titleFontSize,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                  blurRadius: titleShadowBlurRadius,
+                                  color: Colors.black26,
+                                  offset:
+                                      Offset(titleShadowOffset, titleShadowOffset))
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-
-
-                    // Button Section
-                    Padding(
-                      padding: EdgeInsets.only(bottom: screenHeight * 0.04),
-                      child: AnimatedBuilder(
-                        animation: _buttonGlowAnimationController,
-                        builder: (context, child) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              boxShadow:  [
-                                BoxShadow(
-                                  color: AppTheme.accentGold
-                                      .withAlpha((60 + //Reduced Alpha
-                                  60 *  //Reduced Alpha
-                                      _buttonGlowAnimationController
-                                          .value)
-                                      .toInt()),
-                                  blurRadius:
-                                  10 * // Reduced blur
-                                      _buttonGlowAnimationController.value,
-                                  spreadRadius:
-                                  2 * // Reduced spread
-                                      _buttonGlowAnimationController.value,
-                                )
-                              ],
-                            ),
-                            child: ElevatedButton(
-                              onPressed:  _verse3AnimationController.isCompleted // Use the flag here
-                                  ? () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                        const WordOfGodScreen()));
-                              }
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                foregroundColor:  _verse3AnimationController.isCompleted
-                                    ? AppTheme.godTheFather
-                                    : Colors.grey.shade700,
-                                backgroundColor:  _verse3AnimationController.isCompleted
-                                    ? AppTheme.maryWhite
-                                    : Colors.grey.shade400,
-                                elevation:  _verse3AnimationController.isCompleted ? 8 : 2,
-                                shadowColor:  _verse3AnimationController.isCompleted
-                                    ? AppTheme.accentGold.withOpacity(0.8)
-                                    : Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(buttonBorderRadius)),
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: buttonPaddingHorizontal,
-                                    vertical: buttonPaddingVertical),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.only(
+                              left: screenWidth * 0.06,
+                              right: screenWidth * 0.06,
+                              top: screenHeight * 0.005,
+                              bottom: 0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              FadeTransition(
+                                opacity: _verse1FadeAnimation,
+                                child: _buildVerseContainer(
+                                  verseText: (_verseSets != null &&
+                                          _verseSets!.isNotEmpty && // Use isNotEmpty
+                                          _currentVerseSetIndex <
+                                              _verseSets!.length &&
+                                          _verseSets![_currentVerseSetIndex]
+                                                  .length >
+                                              0)
+                                      ? _verseSets![_currentVerseSetIndex][0]
+                                          ['text']!
+                                      : "Verse not found", // Default Value
+                                  citation: (_verseSets != null &&
+                                          _verseSets!.isNotEmpty && // Use isNotEmpty
+                                          _currentVerseSetIndex <
+                                              _verseSets!.length &&
+                                          _verseSets![_currentVerseSetIndex]
+                                                  .length >
+                                              0)
+                                      ? _verseSets![_currentVerseSetIndex][0]
+                                          ['citation']!
+                                      : "Unknown", // Default Value,
+                                  verseFontSize: verseFontSize,
+                                  versePaddingVertical: versePaddingVertical,
+                                  versePaddingHorizontal: versePaddingHorizontal,
+                                  verseBorderRadius: verseBorderRadius,
+                                  citationIconSize: citationIconSize,
+                                  screenWidth: screenWidth,
+                                  verseIndex: 0,
+                                ),
                               ),
-                              child: Text("Receive the WORD of GOD",
-                                  style: TextStyle(
-                                      fontSize: buttonFontSize,
-                                      fontWeight: FontWeight.bold)),
-                            ),
-                          );
-                        },
+                              SizedBox(height: verseSpacing),
+                              FadeTransition(
+                                opacity: _verse2FadeAnimation,
+                                child: _buildVerseContainer(
+                                    verseText: (_verseSets != null &&
+                                            _verseSets!.isNotEmpty && // Use isNotEmpty
+                                            _currentVerseSetIndex <
+                                                _verseSets!.length &&
+                                            _verseSets![_currentVerseSetIndex]
+                                                    .length >
+                                                1)
+                                        ? _verseSets![_currentVerseSetIndex][1]
+                                            ['text']!
+                                        : "Verse not found",
+                                    citation: (_verseSets != null &&
+                                            _verseSets!.isNotEmpty && // Use isNotEmpty
+                                            _currentVerseSetIndex <
+                                                _verseSets!.length &&
+                                            _verseSets![_currentVerseSetIndex]
+                                                    .length >
+                                                1)
+                                        ? _verseSets![_currentVerseSetIndex][1]
+                                            ['citation']!
+                                        : "Unknown",
+                                    verseFontSize: verseFontSize,
+                                    versePaddingVertical: versePaddingVertical,
+                                    versePaddingHorizontal:
+                                        versePaddingHorizontal,
+                                    verseBorderRadius: verseBorderRadius,
+                                    citationIconSize: citationIconSize,
+                                    screenWidth: screenWidth,
+                                    verseIndex: 1),
+                              ),
+                              SizedBox(height: verseSpacing),
+                              FadeTransition(
+                                opacity: _verse3FadeAnimation,
+                                child: _buildVerseContainer(
+                                    verseText: (_verseSets != null &&
+                                            _verseSets!.isNotEmpty && // Use isNotEmpty
+                                            _currentVerseSetIndex <
+                                                _verseSets!.length &&
+                                            _verseSets![_currentVerseSetIndex]
+                                                    .length >
+                                                2)
+                                        ? _verseSets![_currentVerseSetIndex][2]
+                                            ['text']!
+                                        : "Verse not found",
+                                    citation: (_verseSets != null &&
+                                            _verseSets!.isNotEmpty && // Use isNotEmpty
+                                            _currentVerseSetIndex <
+                                                _verseSets!.length &&
+                                            _verseSets![_currentVerseSetIndex]
+                                                    .length >
+                                                2)
+                                        ? _verseSets![_currentVerseSetIndex][2]
+                                            ['citation']!
+                                        : "Unknown",
+                                    verseFontSize: verseFontSize,
+                                    versePaddingVertical: versePaddingVertical,
+                                    versePaddingHorizontal:
+                                        versePaddingHorizontal,
+                                    verseBorderRadius: verseBorderRadius,
+                                    citationIconSize: citationIconSize,
+                                    screenWidth: screenWidth,
+                                    verseIndex: 2),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      Padding(
+                        padding: EdgeInsets.only(bottom: screenHeight * 0.04),
+                        child: AnimatedBuilder(
+                          animation: _buttonGlowAnimationController,
+                          builder: (context, child) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.accentGold.withAlpha((60 +
+                                            60 *
+                                                _buttonGlowAnimationController
+                                                    .value)
+                                        .toInt()),
+                                    blurRadius: 10 *
+                                        _buttonGlowAnimationController.value,
+                                    spreadRadius: 2 *
+                                        _buttonGlowAnimationController.value,
+                                  )
+                                ],
+                              ),
+                              child: ElevatedButton(
+                                onPressed: _verse3AnimationController.isCompleted
+                                    ? () {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const WordOfGodScreen()));
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor:
+                                      _verse3AnimationController.isCompleted
+                                          ? AppTheme.godTheFather
+                                          : Colors.grey.shade700,
+                                  backgroundColor:
+                                      _verse3AnimationController.isCompleted
+                                          ? AppTheme.maryWhite
+                                          : Colors.grey.shade400,
+                                  elevation:
+                                      _verse3AnimationController.isCompleted
+                                          ? 8
+                                          : 2,
+                                  shadowColor:
+                                      _verse3AnimationController.isCompleted
+                                          ? AppTheme.accentGold.withOpacity(0.8)
+                                          : Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          buttonBorderRadius)),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: buttonPaddingHorizontal,
+                                      vertical: buttonPaddingVertical),
+                                ),
+                                child: Text("Receive the WORD of GOD",
+                                    style: TextStyle(
+                                        fontSize: buttonFontSize,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          } else if (snapshot.hasError) {
-            // Handle errors during data loading
-            return Center(child: Text("Error loading data: ${snapshot.error}"));
-          } else {
-            // Data is still loading, show a loading indicator
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
+              );
+            } else if (snapshot.hasError) {
+              return Center(
+                  child: Text("Error loading data: ${snapshot.error}"));
+            } else {
+              return const Center(child: CircularProgressIndicator());
+            }
+          },
+        ),
       ),
     );
   }
 
-// Helper method to build verse containers
   Widget _buildVerseContainer({
     required String verseText,
     required String citation,
@@ -382,24 +426,21 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
     required double verseBorderRadius,
     required double citationIconSize,
     required double screenWidth,
-    required int verseIndex, // Add verseIndex parameter
+    required int verseIndex,
   }) {
     return Container(
       padding: EdgeInsets.symmetric(
           vertical: versePaddingVertical, horizontal: versePaddingHorizontal),
       decoration: BoxDecoration(
-        color: Colors.black
-            .withOpacity(screenWidth < 350 ? 0.04 : 0.02), // Conditional, lighter color
+        color: Colors.black.withOpacity(screenWidth < 350 ? 0.04 : 0.02),
         borderRadius: BorderRadius.circular(verseBorderRadius),
         border: Border(
-          // Add the left border
           left: BorderSide(
             color: AppTheme.accentGold.withOpacity(0.7),
-            width: screenWidth * 0.005, // Reduced thickness
+            width: screenWidth * 0.005,
           ),
         ),
         boxShadow: [
-          // Original, light shadow
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
             blurRadius: screenWidth * 0.005,
@@ -412,20 +453,15 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded( // Wrap with Expanded
+          Expanded(
             child: Text(
-              // Use a conditional expression to handle null _verseSets
-
-                 (_verseSets != null
-                      ? _verseSets![_currentVerseSetIndex][verseIndex]['text']! // Use verseIndex
-                      : ""), // Use empty string if _verseSets is null
+              verseText, // Use the parameter directly
               textAlign: TextAlign.center,
               style: GoogleFonts.robotoSlab(
                 textStyle: TextStyle(
                   fontSize: verseFontSize,
                   color: Colors.white,
                   fontStyle: FontStyle.normal,
-                  // fontWeight: FontWeight.bold, // Removed bold
                   shadows: [
                     Shadow(
                         color: const Color.fromARGB(255, 192, 136, 45),
@@ -438,9 +474,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
             ),
           ),
           Tooltip(
-            message:  (_verseSets != null
-                    ? _verseSets![_currentVerseSetIndex][verseIndex]['citation']! // Use verseIndex
-                    : ""),
+            message: citation, // Use the parameter directly
             waitDuration: Duration.zero,
             showDuration: const Duration(seconds: 3),
             child: Icon(Icons.info_outline,

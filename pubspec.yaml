@@ -44,6 +44,7 @@ dependencies:
   rename: ^3.0.2
   shared_preferences: ^2.2.2
   flutter_glow: ^0.3.0
+  double_back_to_close_app: ^2.1.0
 
 
 dev_dependencies:

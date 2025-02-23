@@ -1,0 +1,2 @@
+C:/Apps/word_of_god/android/app/.cxx/RelWithDebInfo/f4l5w82k/x86_64/CMakeFiles/edit_cache.dir
+C:/Apps/word_of_god/android/app/.cxx/RelWithDebInfo/f4l5w82k/x86_64/CMakeFiles/rebuild_cache.dir

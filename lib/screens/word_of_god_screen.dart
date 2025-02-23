@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http; // Used for fetching the verse.
 import 'package:connectivity_plus/connectivity_plus.dart'; // Import for network connectivity check
 import 'dart:async'; // Import for TimeoutException
 import 'package:share_plus/share_plus.dart'; // Import for sharing
+import 'package:double_back_to_close_app/double_back_to_close_app.dart'; // Import the package
 
 class WordOfGodScreen extends StatefulWidget {
   const WordOfGodScreen({super.key});
@@ -311,58 +312,63 @@ Page resource error:
 
     return Scaffold(
       // No AppBar to maximize content space.
-      body: Container(
-        decoration: const BoxDecoration(
-          // Background gradient.
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.godTheFather,
-              AppTheme.churchPurple,
-              AppTheme.jesusChristCrimson,
-              AppTheme.holySpirit,
-              AppTheme.jesusChristGold,
-              AppTheme.maryBlue,
-              AppTheme.maryWhite,
-            ],
-          ),
+      body: DoubleBackToCloseApp( // Wrap with DoubleBackToCloseApp
+        snackBar: const SnackBar(
+          content: Text('Tap back again to leave'),
         ),
-        child: Stack(
-          // Use a Stack to overlay the loading indicator.
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  // WebView takes up the available space.
-                  child: Padding(
-                    padding: EdgeInsets.all(screenWidth * 0.02),
-                    child: _loadError
-                        ? _buildErrorWidget(screenWidth, screenHeight)
-                        : WebViewWidget(controller: _controller), // Display the WebView.
-                  ),
-                ),
-                // Spacing above the button row.  Adjusted for better positioning.
-                SizedBox(height: screenHeight * 0.06),
-                // The row of buttons (like, Pray Again, share).
-                _buildButtonSection(context, screenWidth, screenHeight),
-                // Spacing below the button row. Adjusted for better positioning.
-                SizedBox(height: screenHeight * 0.03),
+        child: Container(
+          decoration: const BoxDecoration(
+            // Background gradient.
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppTheme.godTheFather,
+                AppTheme.churchPurple,
+                AppTheme.jesusChristCrimson,
+                AppTheme.holySpirit,
+                AppTheme.jesusChristGold,
+                AppTheme.maryBlue,
+                AppTheme.maryWhite,
               ],
             ),
-            if (_isLoading)
-              // Show a loading indicator while the WebView is loading.
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withAlpha(128), // Semi-transparent black overlay.
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+          child: Stack(
+            // Use a Stack to overlay the loading indicator.
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                    // WebView takes up the available space.
+                    child: Padding(
+                      padding: EdgeInsets.all(screenWidth * 0.02),
+                      child: _loadError
+                          ? _buildErrorWidget(screenWidth, screenHeight)
+                          : WebViewWidget(controller: _controller), // Display the WebView.
+                    ),
+                  ),
+                  // Spacing above the button row.  Adjusted for better positioning.
+                  SizedBox(height: screenHeight * 0.06),
+                  // The row of buttons (like, Pray Again, share).
+                  _buildButtonSection(context, screenWidth, screenHeight),
+                  // Spacing below the button row. Adjusted for better positioning.
+                  SizedBox(height: screenHeight * 0.03),
+                ],
+              ),
+              if (_isLoading)
+                // Show a loading indicator while the WebView is loading.
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withAlpha(128), // Semi-transparent black overlay.
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

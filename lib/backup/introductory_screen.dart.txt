@@ -18,7 +18,7 @@ class IntroductoryScreen extends StatefulWidget {
 
 class _IntroductoryScreenState extends State<IntroductoryScreen>
     with TickerProviderStateMixin {
-  List<List<Offset>> _strokes = []; // Stores COMPLETED strokes
+  final List<List<Offset>> _strokes = []; // Stores COMPLETED strokes
   List<Offset>? _drawingStroke; // Stores the CURRENT stroke being drawn
   bool _crossDrawn = false;
   late AnimationController _animationController;
@@ -386,7 +386,11 @@ void _onPanEnd(DragEndDetails details, Size canvasSize) {
                           // _buildGlowingText("of the Father,", _line2FadeAnimation, screenWidth),
                           // _buildGlowingText("the Son", _line3FadeAnimation, screenWidth),
                           // _buildGlowingText("and the Holy Spirit.", _line4FadeAnimation, screenWidth),
-                          _buildGlowText("In the Name", _line1FadeAnimation, screenWidth), // NEW
+                          // _buildGlowText("In the Name", _line1FadeAnimation, screenWidth), // NEW
+                          // _buildGlowText("of the Father,", _line2FadeAnimation, screenWidth),
+                          // _buildGlowText("the Son", _line3FadeAnimation, screenWidth),
+                          // _buildGlowText("and the Holy Spirit.", _line4FadeAnimation, screenWidth),
+                          _buildGlowText("In the Name", _line1FadeAnimation, screenWidth),
                           _buildGlowText("of the Father,", _line2FadeAnimation, screenWidth),
                           _buildGlowText("the Son", _line3FadeAnimation, screenWidth),
                           _buildGlowText("and the Holy Spirit.", _line4FadeAnimation, screenWidth),
@@ -536,26 +540,32 @@ void _onPanEnd(DragEndDetails details, Size canvasSize) {
     );
   }
 
-// Helper function to build glowing text using FlutterGlow
+// Helper function to build glowing text using FlutterGlow - MODIFIED
 Widget _buildGlowText(String text, Animation<double> animation, double screenWidth) {
-    return FadeTransition(
-      opacity: animation,
-      child: GlowText(
-        text,
-        style: GoogleFonts.roboto(
-          textStyle: TextStyle(
-            fontSize: screenWidth * 0.07,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.resurrectionGold, // Use a more vibrant gold
-            height: 1.4,
-          ),
+  return FadeTransition(
+    opacity: animation,
+    child: GlowText(
+      text,
+      style: GoogleFonts.roboto(
+        textStyle: TextStyle(
+          fontSize: screenWidth * 0.07,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.shimmeringGold, // Use the new shimmering gold
+          height: 1.4,
+          shadows: [ // Add a subtle text shadow
+            Shadow(
+              color: Colors.black.withAlpha((0.2 * 255).toInt()), // Dark shadow
+              offset: Offset(1, 1),
+              blurRadius: screenWidth * 0.01,
+            ),
+          ],
         ),
-        glowColor: AppTheme.resurrectionGold.withOpacity(0.8), // Strong glow
-        blurRadius: screenWidth * 0.06, // Adjust as needed
-
       ),
-    );
-  }
+      glowColor: AppTheme.shimmeringGold.withAlpha((0.9 * 255).toInt()), // Strong glow, slightly more opaque
+      blurRadius: screenWidth * 0.08, // Increased blur radius
+    ),
+  );
+}
 }
 
 class CrossPainter extends CustomPainter {
@@ -634,7 +644,7 @@ class CrossPainter extends CustomPainter {
     // Draw the current stroke (preview)
     if (currentStroke != null && currentStroke!.isNotEmpty) {
       final previewPaint = Paint()
-        ..color = Colors.white.withOpacity(0.5)
+        ..color = Colors.white.withAlpha((0.5 * 255).toInt())
         ..strokeWidth = 3.0
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round;
