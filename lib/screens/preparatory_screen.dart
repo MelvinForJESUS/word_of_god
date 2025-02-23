@@ -243,8 +243,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                                           _currentVerseSetIndex <
                                               _verseSets!.length &&
                                           _verseSets![_currentVerseSetIndex]
-                                                  .length >
-                                              0)
+                                                  .isNotEmpty) // Use isNotEmpty
                                       ? _verseSets![_currentVerseSetIndex][0]
                                           ['text']!
                                       : "Verse not found", // Default Value
@@ -253,8 +252,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                                           _currentVerseSetIndex <
                                               _verseSets!.length &&
                                           _verseSets![_currentVerseSetIndex]
-                                                  .length >
-                                              0)
+                                                  .isNotEmpty) // Use isNotEmpty
                                       ? _verseSets![_currentVerseSetIndex][0]
                                           ['citation']!
                                       : "Unknown", // Default Value,
@@ -276,8 +274,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                                             _currentVerseSetIndex <
                                                 _verseSets!.length &&
                                             _verseSets![_currentVerseSetIndex]
-                                                    .length >
-                                                1)
+                                                    .length >= 2) // Use length >= 2
                                         ? _verseSets![_currentVerseSetIndex][1]
                                             ['text']!
                                         : "Verse not found",
@@ -286,8 +283,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                                             _currentVerseSetIndex <
                                                 _verseSets!.length &&
                                             _verseSets![_currentVerseSetIndex]
-                                                    .length >
-                                                1)
+                                                    .length >= 2) // Use length >= 2
                                         ? _verseSets![_currentVerseSetIndex][1]
                                             ['citation']!
                                         : "Unknown",
@@ -309,8 +305,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                                             _currentVerseSetIndex <
                                                 _verseSets!.length &&
                                             _verseSets![_currentVerseSetIndex]
-                                                    .length >
-                                                2)
+                                                    .length >= 3) // Use length >= 3
                                         ? _verseSets![_currentVerseSetIndex][2]
                                             ['text']!
                                         : "Verse not found",
@@ -319,8 +314,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                                             _currentVerseSetIndex <
                                                 _verseSets!.length &&
                                             _verseSets![_currentVerseSetIndex]
-                                                    .length >
-                                                2)
+                                                    .length >= 3) // Use length >= 3
                                         ? _verseSets![_currentVerseSetIndex][2]
                                             ['citation']!
                                         : "Unknown",
