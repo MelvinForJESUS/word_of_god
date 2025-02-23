@@ -6,9 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'preparatory_screen.dart';
 import '../utils/theme.dart';
-import 'dart:math'; // Import for math functions (used in cross detection)
-
-// BreathingAnimation widget (Removed) - No longer used.
+import 'dart:math';
 
 class IntroductoryScreen extends StatefulWidget {
   const IntroductoryScreen({super.key});
@@ -18,110 +16,123 @@ class IntroductoryScreen extends StatefulWidget {
 
 class _IntroductoryScreenState extends State<IntroductoryScreen>
     with TickerProviderStateMixin {
-  final List<List<Offset>> _strokes = []; // Stores the user's drawing strokes
-  List<Offset>? _currentStroke; // Represents the current stroke being drawn
-  bool _crossDrawn = false; // Flag to indicate if a cross has been successfully drawn
-  late AnimationController _animationController; // Controller for the glowing animation
-  late AnimationController _bannerAnimationController; // Controller for the banner fade-out
-  late Animation<double> _bannerFadeAnimation; // Animation for the banner fade-out
-  late AnimationController _amenButtonAnimationController; // Controller for Amen button fade-in
-  late Animation<double> _amenButtonFadeAnimation;   // Animation for Amen button fade-in
-  late AnimationController _helperTextAnimationController; // Controller for helper text fade-out
-  late Animation<double> _helperTextFadeAnimation; // Animation for helper text fade-out
-  bool _showBanner = true; // Flag to control the visibility of the banner
-  bool _showAmenButton = false; // Flag to control the visibility of the Amen button
-  bool _allowDrawing = false; // Flag to control when drawing is permitted
+  List<List<Offset>> _strokes = [];
+  List<Offset>? _currentStroke;
+  bool _crossDrawn = false;
+  late AnimationController _animationController;
+  late AnimationController _bannerAnimationController;
+  late Animation<double> _bannerFadeAnimation;
+  late AnimationController _amenButtonAnimationController;
+  late Animation<double> _amenButtonFadeAnimation;
+  late AnimationController _helperTextAnimationController;
+  late Animation<double> _helperTextFadeAnimation;
+  bool _showBanner = true;
+  bool _showAmenButton = false;
+  bool _allowDrawing = false;
 
-  // Typing animation variables
-  late AnimationController _typingAnimationController;
-  final String _blessingText = "In the Name\nof the Father,\nthe Son\nand the Holy Spirit.";
-  List<String> _blessingWords = [];
-  // int _currentWordIndex = 0; // Not directly used in the final version, but good for understanding
-  // bool _typingAnimationComplete = false; // REMOVED
+  // Fade-in animation variables
+  late AnimationController _line1Controller;
+  late Animation<double> _line1FadeAnimation;
+  late AnimationController _line2Controller;
+  late Animation<double> _line2FadeAnimation;
+  late AnimationController _line3Controller;
+  late Animation<double> _line3FadeAnimation;
+  late AnimationController _line4Controller;
+  late Animation<double> _line4FadeAnimation;
+
+  static const _animationDuration = Duration(milliseconds: 500);
+  static const _animationDelay = Duration(milliseconds: 500);
 
   @override
   void initState() {
     super.initState();
 
-    // Animation controller for the glowing effect around the cross and button.
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2), // Duration of one glow cycle
-    )..repeat(reverse: true); // Repeat the glow in reverse (pulse effect)
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
 
-    // Animation controller for the banner's fade-out effect.
     _bannerAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500), // Duration of the fade-out
+      duration: const Duration(milliseconds: 1500),
     );
     _bannerFadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
         CurvedAnimation(parent: _bannerAnimationController, curve: Curves.easeOut));
 
-    // Initialize Amen button animation controller and animation
     _amenButtonAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500), // Duration of the fade-in
+      duration: const Duration(milliseconds: 500),
     );
     _amenButtonFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _amenButtonAnimationController,
-        curve: Curves.easeIn, // Use a smooth easing curve
+        curve: Curves.easeIn,
       ),
     );
 
-    // Initialize helper text animation controller and animation
     _helperTextAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500), // Match Amen button fade-in
+      duration: const Duration(milliseconds: 500),
     );
     _helperTextFadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _helperTextAnimationController,
-        curve: Curves.easeOut, // Fade out smoothly
+        curve: Curves.easeOut,
       ),
     );
 
-    // --- Typing Animation Setup ---
-    _blessingWords = _blessingText.split(" "); // Split the text into words
-    _typingAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4), // Increased duration to 4 seconds (adjust as needed)
-    );
+    _line1Controller = AnimationController(vsync: this, duration: _animationDuration);
+    _line1FadeAnimation = _createFadeAnimation(_line1Controller);
+    _line2Controller = AnimationController(vsync: this, duration: _animationDuration);
+    _line2FadeAnimation = _createFadeAnimation(_line2Controller);
+    _line3Controller = AnimationController(vsync: this, duration: _animationDuration);
+    _line3FadeAnimation = _createFadeAnimation(_line3Controller);
+    _line4Controller = AnimationController(vsync: this, duration: _animationDuration);
+    _line4FadeAnimation = _createFadeAnimation(_line4Controller);
 
-    // _typingAnimationController.addStatusListener((status) { // REMOVED
-    //   if (status == AnimationStatus.completed) {
-    //     setState(() {
-    //       _typingAnimationComplete = true; // Set flag when animation completes
-    //     });
-    //   }
-    // });
-
-    // Delay the banner fade-out animation.
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         _bannerAnimationController.forward().whenComplete(() {
           setState(() {
-            _showBanner = false; // Hide the banner
-            _allowDrawing = true; // Enable drawing
+            _showBanner = false;
+            _allowDrawing = true;
           });
-          // Start the typing animation *here*, after the banner is gone.
           if (mounted) {
-            _typingAnimationController.forward();
+            _startBlessingAnimations();
           }
         });
       }
     });
 
-    // Delay the "Amen" button and helper text fade-out.
     Future.delayed(const Duration(seconds: 7), () {
       if (mounted) {
         setState(() {
           _showAmenButton = true;
-          _amenButtonAnimationController.forward(); // Fade in Amen button
-          _helperTextAnimationController.forward(); // Fade out helper text
+          _amenButtonAnimationController.forward();
+          _helperTextAnimationController.forward();
         });
       }
     });
+  }
+
+  Animation<double> _createFadeAnimation(AnimationController controller) {
+    return Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: controller, curve: Curves.easeIn),
+    );
+  }
+
+  Future<void> _startBlessingAnimations() async {
+    if (!mounted) return;
+    _line1Controller.forward();
+    await Future.delayed(_animationDelay);
+    if (!mounted) return;
+    _line2Controller.forward();
+    await Future.delayed(_animationDelay);
+    if (!mounted) return;
+    _line3Controller.forward();
+    await Future.delayed(_animationDelay);
+    if (!mounted) return;
+    _line4Controller.forward();
   }
 
   @override
@@ -130,162 +141,178 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
     _bannerAnimationController.dispose();
     _amenButtonAnimationController.dispose();
     _helperTextAnimationController.dispose();
-    _typingAnimationController.dispose(); // Dispose of the typing animation controller
+    _line1Controller.dispose();
+    _line2Controller.dispose();
+    _line3Controller.dispose();
+    _line4Controller.dispose();
     super.dispose();
   }
 
-// Helper function to build the animated typing text
-  Widget _buildTypingText(double screenWidth) {
-    return AnimatedBuilder(
-      animation: _typingAnimationController,
-      builder: (context, child) {
-        int numWordsToShow =
-            (_typingAnimationController.value * _blessingWords.length).floor();
-        double fadeStart = 0.0;
-        if (numWordsToShow < _blessingWords.length) {
-            fadeStart = (numWordsToShow / _blessingWords.length);
-        }
-
-        double fadeEnd = fadeStart + (1.0 / _blessingWords.length) * 0.8;
-
-        return RichText(
-          textAlign: TextAlign.center,
-          text: TextSpan(
-            style: GoogleFonts.roboto(
-              textStyle: TextStyle(
-                fontSize: screenWidth * 0.07, // Responsive font size
-                fontWeight: FontWeight.bold,
-                color: AppTheme.jesusChristGold.withAlpha(180), // Use gold with reduced opacity
-                height: 1.4,
-              ),
-            ),
-            children: _buildTextSpans(numWordsToShow, fadeStart, fadeEnd),
-          ),
-        );
-      },
-    );
-  }
-
-  // New helper function to build the list of TextSpans
-  List<InlineSpan> _buildTextSpans(int numWordsToShow, double fadeStart, double fadeEnd) {
-    List<InlineSpan> spans = [];
-
-    for (int i = 0; i < _blessingWords.length; i++) {
-      if (i < numWordsToShow) {
-        // Fully visible word
-        spans.add(TextSpan(text: "${_blessingWords[i]} ")); // String interpolation
-      } else if (i == numWordsToShow) {
-        // Fading word
-        double opacity = Curves.easeIn.transform(
-          max(0.0, min(1.0, (_typingAnimationController.value - fadeStart) / (fadeEnd - fadeStart)))
-        );
-
-        spans.add(
-          TextSpan(
-            text: "${_blessingWords[i]} ", // String interpolation
-            style: TextStyle(color: AppTheme.jesusChristGold.withAlpha((opacity * 180).toInt())), //Dynamic opacity
-          ),
-        );
-      } else {
-        //  words not yet visible.
-        spans.add(
-            TextSpan(text: '', style: TextStyle(color: AppTheme.jesusChristGold.withAlpha(0))),
-        );
-      }
-    }
-
-    return spans;
-  }
-  // _isCrossDrawn: Determines if the user has drawn a recognizable cross.
   bool _isCrossDrawn(List<List<Offset>> strokes, Size canvasSize) {
-    if (strokes.length < 2) return false; // Need at least two strokes
+    if (strokes.isEmpty) return false;
 
-    // 1. Find the longest stroke (likely the vertical one).
-    List<Offset> longestStroke = [];
-    List<Offset> otherStroke = [];
-
-    // Determine which stroke is longer.
-    if (strokes[0].length > strokes[1].length) {
-      longestStroke = strokes[0];
-      otherStroke = strokes[1];
-    } else {
-      longestStroke = strokes[1];
-      otherStroke = strokes[0];
+    if (strokes.length == 1) {
+      return _isCrossDrawnMethodB(strokes[0], canvasSize);
+    } else if (strokes.length == 2) {
+      return _isCrossDrawnMethodA(strokes, canvasSize);
     }
-
-    if (longestStroke.isEmpty || otherStroke.isEmpty) return false;
-
-    // 2. Calculate the angle of the longest stroke.
-    final vStart = longestStroke.first;
-    final vEnd = longestStroke.last;
-    final vDeltaX = vEnd.dx - vStart.dx;
-    final vDeltaY = vEnd.dy - vStart.dy;
-    final vAngle = atan2(vDeltaY, vDeltaX) * 180 / pi; // Angle in degrees
-
-    // 3. Check if the longest stroke is *mostly* vertical (within +/- 30 degrees of vertical).
-    final isVertical = (vAngle > 60 && vAngle < 120) || (vAngle > -120 && vAngle < -60);
-
-    if (!isVertical) return false;
-
-    // 4. Check if the longest stroke is long enough.
-    final vLength = sqrt(vDeltaX * vDeltaX + vDeltaY * vDeltaY);
-    if (vLength < canvasSize.height * 0.3) return false; // 30% of canvas height
-
-    // 5. Calculate the angle of the other stroke.
-    final hStart = otherStroke.first;
-    final hEnd = otherStroke.last;
-    final hDeltaX = hEnd.dx - hStart.dx;
-    final hDeltaY = hEnd.dy - hStart.dy;
-    final hAngle = atan2(hDeltaY, hDeltaX) * 180 / pi; // Angle in degrees
-
-    // 6. Check if the other stroke is *mostly* horizontal (within +/- 30 degrees of horizontal).
-    final isHorizontal = (hAngle > -30 && hAngle < 30) || (hAngle > 150 || hAngle < -150);
-
-    if (!isHorizontal) return false;
-
-    // 7. Check if the other stroke is long enough.
-    final hLength = sqrt(hDeltaX * hDeltaX + hDeltaY * hDeltaY);
-    if (hLength < canvasSize.width * 0.3) return false; // 30% of canvas width
-
-    // 8. Basic intersection check (optional, but can improve accuracy).
-    //    Simplified intersection:  Checks if the bounding boxes of the strokes overlap.
-    final vMinX = min(vStart.dx, vEnd.dx);
-    final vMaxX = max(vStart.dx, vEnd.dx);
-    final vMinY = min(vStart.dy, vEnd.dy);
-    final vMaxY = max(vStart.dy, vEnd.dy);
-    final hMinX = min(hStart.dx, hEnd.dx);
-    final hMaxX = max(hStart.dx, hEnd.dx);
-    final hMinY = min(hStart.dy, hEnd.dy);
-    final hMaxY = max(hStart.dy, hEnd.dy);
-
-    if (hMinX > vMaxX || hMaxX < vMinX || vMinY > hMaxY || vMaxY < hMinY) {
-      return false; // No intersection.
-    }
-
-    return true; // All checks passed; it's likely a cross.
+    return false;
   }
 
-  // _onPanEnd: Called when the user finishes a drawing gesture.
-  void _onPanEnd(DragEndDetails details, Size canvasSize) {
-    if (_strokes.length >= 2) {
-      if (_isCrossDrawn(_strokes, canvasSize)) {
-        // Cross detected!
-        setState(() {
-          _crossDrawn = true;
-        });
-        _animationController.forward(); // Start the glow animation
-        Future.delayed(const Duration(seconds: 1), () {
-          if (!mounted) return;
-          Navigator.pushReplacement( // Navigate to the PreparatoryScreen
-            context,
-            MaterialPageRoute(builder: (context) => const PreparatoryScreen()),
-          );
-        });
-      } else {
-        // Not a cross. Clear the strokes and reset.
-        _strokes.clear();
-        setState(() {});
+  bool _isCrossDrawnMethodA(List<List<Offset>> strokes, Size canvasSize) {
+    if (strokes.length < 2) return false;
+
+    List<Offset> stroke1 = strokes[0];
+    List<Offset> stroke2 = strokes[1];
+
+    if (stroke1.isEmpty || stroke2.isEmpty) return false;
+
+    Offset vStart, vEnd, hStart, hEnd;
+
+    double angle1 = _calculateStrokeAngle(stroke1);
+    double angle2 = _calculateStrokeAngle(stroke2);
+
+    if (_isMostlyVertical(angle1) && _isMostlyHorizontal(angle2)) {
+      vStart = stroke1.first;
+      vEnd = stroke1.last;
+      hStart = stroke2.first;
+      hEnd = stroke2.last;
+    } else if (_isMostlyVertical(angle2) && _isMostlyHorizontal(angle1)) {
+      vStart = stroke2.first;
+      vEnd = stroke2.last;
+      hStart = stroke1.first;
+      hEnd = stroke1.last;
+    } else {
+      return false;
+    }
+
+    if (!_isStrokeLongEnough(vStart, vEnd, canvasSize, true) ||
+        !_isStrokeLongEnough(hStart, hEnd, canvasSize, false)) {
+      return false;
+    }
+
+    // Corrected Intersection Check
+    return _doStrokesIntersect(vStart, vEnd, hStart, hEnd);
+  }
+
+bool _isCrossDrawnMethodB(List<Offset> stroke, Size canvasSize) {
+    if (stroke.length < 3) return false;
+
+    int turningPointIndex = _findTurningPoint(stroke);
+    if (turningPointIndex == -1) return false;
+
+    List<Offset> segment1 = stroke.sublist(0, turningPointIndex + 1);
+    List<Offset> segment2 = stroke.sublist(turningPointIndex);
+
+    if (segment1.length < 2 || segment2.length < 2) return false;
+
+    double angle1 = _calculateStrokeAngle(segment1);
+    double angle2 = _calculateStrokeAngle(segment2);
+
+
+    if (!(_isMostlyVertical(angle1) && _isMostlyHorizontal(angle2)) &&
+        !(_isMostlyHorizontal(angle1) && _isMostlyVertical(angle2))) {
+      return false;
+    }
+
+    if (segment1.first == segment1.last || segment2.first == segment2.last) return false;
+
+
+    if (!_isStrokeLongEnough(segment1.first, segment1.last, canvasSize, _isMostlyVertical(angle1)) ||
+        !_isStrokeLongEnough(segment2.first, segment2.last, canvasSize, _isMostlyHorizontal(angle2))) { // Corrected: Check against horizontal for segment2
+      return false;
+    }
+
+    // Corrected Intersection Check
+    return _doStrokesIntersect(segment1.first, segment1.last, segment2.first, segment2.last);
+}
+
+  int _findTurningPoint(List<Offset> stroke) {
+    if (stroke.length < 3) return -1;
+
+    double maxAngleChange = 0.0;
+    int turningPointIndex = -1;
+
+    for (int i = 1; i < stroke.length - 1; i++) {
+      double angle1 = (stroke[i] - stroke[i - 1]).direction;
+      double angle2 = (stroke[i + 1] - stroke[i]).direction;
+      double angleChange = (angle2 - angle1).abs();
+
+      if (angleChange > pi) {
+        angleChange = 2 * pi - angleChange;
       }
+
+      if (angleChange > maxAngleChange) {
+        maxAngleChange = angleChange;
+        turningPointIndex = i;
+      }
+    }
+
+    return (maxAngleChange > 0.52) ? turningPointIndex : -1;  // ~30 degrees
+  }
+
+  double _calculateStrokeAngle(List<Offset> stroke) {
+    final start = stroke.first;
+    final end = stroke.last;
+    final deltaX = end.dx - start.dx;
+    final deltaY = end.dy - start.dy;
+    return atan2(deltaY, deltaX) * 180 / pi;
+  }
+
+  bool _isMostlyVertical(double angle) {
+    return (angle > 45 && angle < 135) || (angle > -135 && angle < -45);
+  }
+
+  bool _isMostlyHorizontal(double angle) {
+    return (angle > -45 && angle < 45) || (angle > 135 || angle < -135);
+  }
+
+  bool _isStrokeLongEnough(Offset start, Offset end, Size canvasSize, bool isVertical) {
+    final deltaX = end.dx - start.dx;
+    final deltaY = end.dy - start.dy;
+    final length = sqrt(deltaX * deltaX + deltaY * deltaY);
+    return isVertical ? length >= canvasSize.height * 0.2 : length >= canvasSize.width * 0.2;
+  }
+
+// Corrected Intersection Check Function
+bool _doStrokesIntersect(Offset aStart, Offset aEnd, Offset bStart, Offset bEnd) {
+  double aDx = aEnd.dx - aStart.dx;
+  double aDy = aEnd.dy - aStart.dy;
+  double bDx = bEnd.dx - bStart.dx;
+  double bDy = bEnd.dy - bStart.dy;
+
+  // Handle parallel lines
+  double det = aDx * bDy - bDx * aDy;
+  if (det.abs() < 1e-9) {  // Tolerance for floating-point comparison
+    return false; // Lines are parallel (or nearly parallel)
+  }
+
+  double t = ((bStart.dx - aStart.dx) * aDy - (bStart.dy - aStart.dy) * aDx) / det;
+  double u = -((aStart.dx - bStart.dx) * bDy - (aStart.dy - bStart.dy) * bDx) / det;
+
+  // Check if the intersection point is within both line segments
+  return (t >= 0 && t <= 1 && u >= 0 && u <= 1);
+}
+
+  void _onPanEnd(DragEndDetails details, Size canvasSize) {
+    // Removed unnecessary null check
+    if (_isCrossDrawn(_strokes, canvasSize)) {
+      setState(() {
+        _crossDrawn = true;
+      });
+      _animationController.forward();
+      Future.delayed(const Duration(seconds: 1), () {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const PreparatoryScreen()),
+        );
+      });
+    } else {
+      setState(() {
+        _strokes.clear();
+        _currentStroke = null;
+      });
     }
   }
 
@@ -294,72 +321,50 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-   // --- Responsive Values ---
-    // Header Section
-    final double headerFontSize = screenWidth * 0.11;
-    // final double headerBoxWidth = screenWidth * 0.7;  // REMOVED
-    // final double headerBoxHeight = screenHeight * 0.07; // REMOVED
-    // final double headerShadowBlurRadius = screenWidth * 0.11; // REMOVED
-    // final double headerShadowSpreadRadius = screenWidth * 0.008; // REMOVED
-
-    // Blessing Text Section
-    // final double blessingFontSize = screenWidth * 0.07; // REMOVED and used directly in _buildTypingText
-    // final double blessingLineHeight = 1.4; // REMOVED and used directly
-    final double blessingPaddingHorizontal = screenWidth * 0.07;
-
-    // Drawing Area Section
-    // The drawing area is made taller on larger screens, but kept smaller
-    // on smaller screens.  A smaller width factor is used to reduce
-    // the overall size of the drawing area.
-    final double drawingAreaHeightFactor = screenHeight < 600
+    final headerFontSize = screenWidth * 0.11;
+    final blessingPaddingHorizontal = screenWidth * 0.07;
+    final drawingAreaHeightFactor = screenHeight < 600
         ? 0.28
-        : (screenHeight < 800 ? 0.33 : 0.38); // Granular control
-    final double drawingAreaWidthFactor =
-        0.6; // Reduced width factor for a smaller drawing area
+        : (screenHeight < 800 ? 0.33 : 0.38);
+    final drawingAreaWidthFactor = 0.6;
     final drawingAreaSize = Size(screenWidth * drawingAreaWidthFactor,
         screenHeight * drawingAreaHeightFactor);
     final targetCrossSize =
         Size(drawingAreaSize.width * 0.7, drawingAreaSize.height * 0.7);
-
-    // Helper Text Section
-    final double helperTextFontSize = screenWidth * 0.045;
-
-    // Amen Button Section
-    final double buttonFontSize = screenWidth * 0.045;
-    final double buttonPaddingHorizontal = screenWidth * 0.15;
-    final double buttonPaddingVertical = screenHeight * 0.02;
-
-    // Banner Section
-    final double bannerPadding = screenWidth * 0.13;
-    final double bannerFontSize = screenWidth * 0.18;
+    final helperTextFontSize = screenWidth * 0.045;
+    final buttonFontSize = screenWidth * 0.045;
+    final buttonPaddingHorizontal = screenWidth * 0.15;
+    final buttonPaddingVertical = screenHeight * 0.02;
+    final bannerPadding = screenWidth * 0.13;
+    final bannerFontSize = screenWidth * 0.18;
 
     return Scaffold(
-      body: SafeArea( // Ensures content is not obscured by system UI
-        child: Stack( // Stack allows widgets to be layered on top of each other
+      body: SafeArea(
+        child: Stack(
           children: [
-            Container( // Background container with gradient
+            Container(
               width: screenWidth,
               height: screenHeight,
-              decoration: BoxDecoration(
-                gradient: LinearGradient( // Creates a gradient background
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   colors: [
-                    AppTheme.godTheFather, // Defined in theme.dart
+                    AppTheme.godTheFather,
                     AppTheme.churchPurple,
                     AppTheme.maryBlue,
                   ],
-                  begin: Alignment.topLeft, // Gradient starts at top-left
-                  end: Alignment.bottomRight, // Gradient ends at bottom-right
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
-              child: Column( // Main content column
-                mainAxisAlignment: MainAxisAlignment.start, // Align content to the top
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  SizedBox(height: screenHeight * 0.04), // Top spacing
+                  SizedBox(height: screenHeight * 0.04),
 
-                  // Header Text - "Let Us Pray" (Refined)
+                  // Header Text - "Let Us Pray" (with Glow)
                   Container(
                     alignment: Alignment.center,
-                    padding: EdgeInsets.symmetric(horizontal: screenWidth*0.05),
+                    padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
                     child: Text(
                       "Let Us Pray",
                       style: GoogleFonts.lora(
@@ -368,64 +373,71 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           shadows: [
-                            // Subtle white glow
                             Shadow(
-                              blurRadius: screenWidth * 0.05, // Adjust for desired glow
-                              color: Colors.white.withAlpha(150), // Semi-transparent white
-                              offset: Offset.zero, // Centered glow
+                              blurRadius: screenWidth * 0.05,
+                              color: Colors.white.withAlpha(150),
+                              offset: Offset.zero,
                             ),
-                            // Very faint black shadow for depth
                             Shadow(
-                              blurRadius: screenWidth * 0.005, // Very small blur
-                              color: Colors.black.withAlpha(50), // Very faint black
-                              offset: const Offset(1.0, 1.0), // Slight offset
+                              blurRadius: screenWidth * 0.005,
+                              color: Colors.black.withAlpha(50),
+                              offset: const Offset(1.0, 1.0),
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.03), // Responsive SizedBox
+                  SizedBox(height: screenHeight * 0.03),
 
-                  // Subheading - Blessing text (Typing Animation)
+                  // Blessing text (Fade-In and Glow)
                   Padding(
                     padding:
                         EdgeInsets.symmetric(horizontal: blessingPaddingHorizontal),
-                    child: SizedBox( // Wrap with SizedBox
-                      height: screenHeight * 0.25,  // Adjust this as needed, enough for all lines
-                      child: _buildTypingText(screenWidth),
+                    child: SizedBox(
+                      height: screenHeight * 0.25,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildGlowingText("In the Name", _line1FadeAnimation, screenWidth),
+                          _buildGlowingText("of the Father,", _line2FadeAnimation, screenWidth),
+                          _buildGlowingText("the Son", _line3FadeAnimation, screenWidth),
+                          _buildGlowingText("and the Holy Spirit.", _line4FadeAnimation, screenWidth),
+                        ],
                       ),
+                    ),
                   ),
-                  SizedBox(height: screenHeight * 0.04), // Spacing
+                  SizedBox(height: screenHeight * 0.04),
 
-                  // Drawing area - Gesture detector and CustomPaint.
                   Center(
-                    child: LayoutBuilder( // Used to get the size of the parent widget
+                    child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final canvasSize = drawingAreaSize; // Calculate canvas size
-                        return GestureDetector( // Detects user gestures
+                        final canvasSize = drawingAreaSize;
+                        return GestureDetector(
                           onPanStart: (details) {
-                            if (_allowDrawing) { // Only start if drawing is allowed
+                            if (_allowDrawing) {
                               _currentStrokeStart(details.localPosition);
                             }
                           },
                           onPanUpdate: (details) {
-                            if (_allowDrawing) { // Only update if drawing is allowed
+                            if (_allowDrawing) {
                               _addToCurrentStroke(details.localPosition);
                             }
                           },
                           onPanEnd: (details) {
-                            if (_allowDrawing) { // Only process end if drawing is allowed
+                            if (_allowDrawing) {
+                            _strokes.add(_currentStroke!);
                               _onPanEnd(details, canvasSize);
                             }
                           },
-                          child: CustomPaint( // Custom painter for drawing the cross
+                          child: CustomPaint(
                             size: canvasSize,
-                            painter: CrossPainter( // The custom painter class
-                              strokes: _strokes, // Pass the strokes to be drawn
-                              glow: _crossDrawn, // Pass the glow state
-                              animation: _animationController, // Pass the animation controller
-                              targetSize: targetCrossSize, // Pass the target cross size
+                            painter: CrossPainter(
+                              strokes: _strokes,
+                              glow: _crossDrawn,
+                              animation: _animationController,
+                              targetSize: targetCrossSize,
+                              currentStroke: _currentStroke,
                             ),
                           ),
                         );
@@ -433,14 +445,11 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                     ),
                   ),
 
-                  SizedBox(height: screenHeight * 0.02), // Reduced SizedBox
-
-                  // Use Spacer to push content to the top and button to the bottom
+                  SizedBox(height: screenHeight * 0.02),
                   const Spacer(),
 
-                  // Helper text - Instructions to draw cross (with fade-out).
                   FadeTransition(
-                    opacity: _helperTextFadeAnimation, // Controls the fade-out
+                    opacity: _helperTextFadeAnimation,
                     child: Padding(
                       padding:
                           EdgeInsets.symmetric(horizontal: blessingPaddingHorizontal),
@@ -453,12 +462,11 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                     ),
                   ),
 
-                  SizedBox(height: screenHeight * 0.02), // Spacing before button
+                  SizedBox(height: screenHeight * 0.02),
                 ],
               ),
             ),
 
-            // Amen Button - Shown after delay, with FadeTransition and improved styling.
             if (_showAmenButton)
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 500),
@@ -487,7 +495,7 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                                 horizontal: buttonPaddingHorizontal,
                                 vertical: buttonPaddingVertical),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30), // Rounded corners
+                              borderRadius: BorderRadius.circular(30),
                             ),
                           ).copyWith(
                             elevation: WidgetStateProperty.all(8),
@@ -496,9 +504,9 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                             overlayColor: WidgetStateProperty.resolveWith<Color?>(
                                   (Set<WidgetState> states) {
                                 if (states.contains(WidgetState.pressed)) {
-                                  return AppTheme.accentGold.withAlpha(50); // Slightly darker when pressed
+                                  return AppTheme.accentGold.withAlpha(50);
                                 }
-                                return null; // Defer to the widget's default.
+                                return null;
                               },
                             ),
                           ),
@@ -513,8 +521,6 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
                   ),
                 ),
               ),
-
-            // Full Screen Banner (Fades out at the start).
             if (_showBanner)
               FadeTransition(
                 opacity: _bannerFadeAnimation,
@@ -544,104 +550,139 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
     );
   }
 
-  // _currentStrokeStart: Called when a new drawing stroke starts.
-  void _currentStrokeStart(Offset position) {
-    _currentStroke = <Offset>[]; // Initialize a new list for the current stroke
-    _currentStroke!.add(position); // Add the starting point to the stroke
-    _strokes.add(_currentStroke!); // Add the current stroke to the list of all strokes
-    setState(() {}); // Update the UI
+// Helper function to build glowing text
+  Widget _buildGlowingText(String text, Animation<double> animation, double screenWidth) {
+    return FadeTransition(
+      opacity: animation,
+      child: Text(
+        text,
+        style: GoogleFonts.roboto(
+          textStyle: TextStyle(
+            fontSize: screenWidth * 0.07,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.jesusChristGold.withAlpha(180),
+            height: 1.4,
+            shadows: [
+              Shadow(
+                color: AppTheme.jesusChristGold.withAlpha(100),
+                blurRadius: screenWidth * 0.02, // Adjust for desired glow
+                offset: Offset.zero,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  // _addToCurrentStroke: Called when the user moves their finger while drawing.
+  void _currentStrokeStart(Offset position) {
+    _currentStroke = <Offset>[position];
+    // Don't add to _strokes here, add it on pan end
+    setState(() {});
+  }
+
   void _addToCurrentStroke(Offset position) {
-    _currentStroke?.add(position); // Add the new point to the current stroke
-    setState(() {}); // Update the UI
+    if (_currentStroke != null) {
+      _currentStroke!.add(position);
+      setState(() {});
+    }
   }
 }
 
-// CrossPainter class - Custom painter to draw the cross and guidelines.
 class CrossPainter extends CustomPainter {
-  final List<List<Offset>> strokes; // The strokes to draw
-  final bool glow; // Whether to draw the glow effect
-  final Animation<double> animation; // The animation for the glow
-  final Size targetSize; // The desired size of the cross
+  final List<List<Offset>> strokes;
+  final bool glow;
+  final Animation<double> animation;
+  final Size targetSize;
+  final List<Offset>? currentStroke;
 
   CrossPainter({
     required this.strokes,
     required this.glow,
     required this.animation,
     required this.targetSize,
-  }) : super(repaint: animation); // Listen to the animation for repainting
+    this.currentStroke,
+  }) : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2); // Center of the canvas
-    final crossWidth = targetSize.width; // Desired width of the cross
-    final crossHeight = targetSize.height; // Desired height of the cross
+    final center = Offset(size.width / 2, size.height / 2);
+    final crossWidth = targetSize.width;
+    final crossHeight = targetSize.height;
     final halfCrossWidth = crossWidth / 2;
     final halfCrossHeight = crossHeight / 2;
 
-    // Paint for the guide lines.
     final guidePaint = Paint()
-      ..color = Colors.white.withAlpha(77) // Semi-transparent white
+      ..color = Colors.white.withAlpha(77)
       ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke; // Only draw the outline
+      ..style = PaintingStyle.stroke;
 
-    // Draw the guide lines (a cross shape).
     final guidePath = Path();
-    guidePath.moveTo(center.dx, center.dy - halfCrossHeight); // Top
-    guidePath.lineTo(center.dx, center.dy + halfCrossHeight); // Bottom
-    guidePath.moveTo(center.dx - halfCrossWidth, center.dy); // Left
-    guidePath.lineTo(center.dx + halfCrossWidth, center.dy); // Right
+    guidePath.moveTo(center.dx, center.dy - halfCrossHeight);
+    guidePath.lineTo(center.dx, center.dy + halfCrossHeight);
+    guidePath.moveTo(center.dx - halfCrossWidth, center.dy);
+    guidePath.lineTo(center.dx + halfCrossWidth, center.dy);
     canvas.drawPath(guidePath, guidePaint);
 
-    // Draw the glow effect if _crossDrawn is true.
     if (glow) {
       final glowPaint = Paint()
-        ..shader = RadialGradient( // Create a radial gradient
+        ..shader = RadialGradient(
           colors: [
-            Colors.white.withAlpha((animation.value * 255).toInt()), // From white (animated opacity)
-            Colors.transparent, // To transparent
+            Colors.white.withAlpha((animation.value * 255).toInt()),
+            Colors.transparent,
           ],
-          stops: const [0.0, 1.0], // Gradient stops
-        ).createShader(Rect.fromCircle(center: center, radius: halfCrossWidth)) // Apply to a circle
-        ..style = PaintingStyle.stroke // Only draw the outline
+          stops: const [0.0, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: halfCrossWidth))
+        ..style = PaintingStyle.stroke
         ..strokeWidth = 9.0;
-      // Draw the cross shape for the glow.
+
       final crossPath = Path();
-      crossPath.moveTo(center.dx, center.dy - halfCrossHeight); // Top
-      crossPath.lineTo(center.dx, center.dy + halfCrossHeight); // Bottom
-      crossPath.moveTo(center.dx - halfCrossWidth, center.dy); // Left
-      crossPath.lineTo(center.dx + halfCrossWidth, center.dy); // Right
+      crossPath.moveTo(center.dx, center.dy - halfCrossHeight);
+      crossPath.lineTo(center.dx, center.dy + halfCrossHeight);
+      crossPath.moveTo(center.dx - halfCrossWidth, center.dy);
+      crossPath.lineTo(center.dx + halfCrossWidth, center.dy);
       canvas.drawPath(crossPath, glowPaint);
     }
 
-    // Paint for the user's drawn strokes.
     final strokePaint = Paint()
-      ..color = Colors.white // White color
+      ..color = Colors.white
       ..strokeWidth = 3.0
-      ..style = PaintingStyle.stroke // Only draw the outline
-      ..strokeCap = StrokeCap.round; // Rounded stroke caps
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
 
-    // Draw each stroke.
     for (final stroke in strokes) {
       final path = Path();
       if (stroke.isNotEmpty) {
-        path.moveTo(stroke.first.dx, stroke.first.dy); // Start at the first point
+        path.moveTo(stroke.first.dx, stroke.first.dy);
         for (int i = 1; i < stroke.length; i++) {
-          path.lineTo(stroke[i].dx, stroke[i].dy); // Line to each subsequent point
+          path.lineTo(stroke[i].dx, stroke[i].dy);
         }
-        canvas.drawPath(path, strokePaint); // Draw the path
+        canvas.drawPath(path, strokePaint);
       }
+    }
+
+    if (currentStroke != null && currentStroke!.isNotEmpty) {
+      final previewPaint = Paint()
+        ..color = Colors.white.withOpacity(0.5)
+        ..strokeWidth = 3.0
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+
+      final previewPath = Path();
+      previewPath.moveTo(currentStroke!.first.dx, currentStroke!.first.dy);
+      for (int i = 1; i < currentStroke!.length; i++) {
+        previewPath.lineTo(currentStroke![i].dx, currentStroke![i].dy);
+      }
+      canvas.drawPath(previewPath, previewPaint);
     }
   }
 
   @override
   bool shouldRepaint(covariant CrossPainter oldDelegate) {
-    // Repaint only if the strokes, glow state, animation value, or target size changes.
     return oldDelegate.strokes != strokes ||
         oldDelegate.glow != glow ||
         oldDelegate.animation.value != animation.value ||
-        oldDelegate.targetSize != targetSize;
+        oldDelegate.targetSize != targetSize ||
+        oldDelegate.currentStroke != currentStroke;
   }
 }
