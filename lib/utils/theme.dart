@@ -1,3 +1,6 @@
+//theme.dart
+//GODisLOVE
+
 import 'package:flutter/material.dart';
 
 class AppTheme {
@@ -11,8 +14,9 @@ class AppTheme {
   static const Color maryWhite = Color(0xFFF8F9FA);          // Purity White
   static const Color churchGold = Color(0xFFD4AF37);        // Unified Gold (Duplicated - consider if needed)
   static const Color accentGold = Color(0xFFB8860B);       // Muted, Antique Gold (DarkGoldenrod)
+  static const Color resurrectionGold = Color(0xFFDAA520); // Goldenrod - A more vibrant gold
+  static const Color shimmeringGold = Color(0xFFF0E68C); // Khaki - A brighter, more metallic gold
 
-    
 
   // Define your light theme
   static ThemeData lightTheme = ThemeData(

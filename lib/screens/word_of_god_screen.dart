@@ -1,3 +1,6 @@
+//Word_of_GOD_screen.dart
+//GODisLOVE
+
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'preparatory_screen.dart'; // Import PreparatoryScreen
@@ -104,6 +107,7 @@ Page resource error:
 
     // Check for network connectivity
     var connectivityResult = await Connectivity().checkConnectivity();
+    // ignore: unrelated_type_equality_checks
     if (connectivityResult == ConnectivityResult.none) {
       setState(() {
         _loadError = true;

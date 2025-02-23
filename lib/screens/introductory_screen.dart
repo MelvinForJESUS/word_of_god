@@ -1,12 +1,14 @@
 // introductory_screen.dart
-
 // ignore_for_file: library_private_types_in_public_api
+//GODisLOVE
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'preparatory_screen.dart';
 import '../utils/theme.dart';
 import 'dart:math';
+import 'package:flutter_glow/flutter_glow.dart'; // Import the glow package
+
 
 class IntroductoryScreen extends StatefulWidget {
   const IntroductoryScreen({super.key});
@@ -16,8 +18,8 @@ class IntroductoryScreen extends StatefulWidget {
 
 class _IntroductoryScreenState extends State<IntroductoryScreen>
     with TickerProviderStateMixin {
-  List<List<Offset>> _strokes = [];
-  List<Offset>? _currentStroke;
+  final List<List<Offset>> _strokes = []; // Stores COMPLETED strokes
+  List<Offset>? _drawingStroke; // Stores the CURRENT stroke being drawn
   bool _crossDrawn = false;
   late AnimationController _animationController;
   late AnimationController _bannerAnimationController;
@@ -30,7 +32,7 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
   bool _showAmenButton = false;
   bool _allowDrawing = false;
 
-  // Fade-in animation variables
+  // Fade-in animation variables (No longer needed, but kept for now)
   late AnimationController _line1Controller;
   late Animation<double> _line1FadeAnimation;
   late AnimationController _line2Controller;
@@ -42,6 +44,13 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
 
   static const _animationDuration = Duration(milliseconds: 500);
   static const _animationDelay = Duration(milliseconds: 500);
+
+  // Constants for cross detection (tunable)
+  static const double _minStrokeLengthRatio = 0.2; // Min length relative to canvas size
+  static const double _angleTolerance = 35.0; // Degrees.  Increased for more leniency.
+  // static const double _cornerAngleThreshold = 45.0; // Degrees (for single-stroke) - REMOVED
+  static const double _intersectionDistanceThreshold = 30.0; //  Increased for more leniency.
+
 
   @override
   void initState() {
@@ -148,173 +157,147 @@ class _IntroductoryScreenState extends State<IntroductoryScreen>
     super.dispose();
   }
 
-  bool _isCrossDrawn(List<List<Offset>> strokes, Size canvasSize) {
-    if (strokes.isEmpty) return false;
+// Unified Cross Detection (ONLY TWO-STROKE NOW)
+bool _isCrossDrawn(Size canvasSize) {
+  if (_drawingStroke == null || _drawingStroke!.isEmpty) return false;
 
-    if (strokes.length == 1) {
-      return _isCrossDrawnMethodB(strokes[0], canvasSize);
-    } else if (strokes.length == 2) {
-      return _isCrossDrawnMethodA(strokes, canvasSize);
-    }
+  if (_strokes.length == 1) {
+    // Only check for two-stroke cross
+    return _isTwoStrokeCross(_strokes[0], _drawingStroke!, canvasSize);
+  }
+
+  return false;
+}
+
+bool _isTwoStrokeCross(List<Offset> stroke1, List<Offset> stroke2, Size canvasSize) {
+  // 1. Length Check - Early Exit
+  if (!_isStrokeLongEnough(stroke1, canvasSize) || !_isStrokeLongEnough(stroke2, canvasSize)) {
     return false;
   }
 
-  bool _isCrossDrawnMethodA(List<List<Offset>> strokes, Size canvasSize) {
-    if (strokes.length < 2) return false;
+  // 2. Angle Check - Early Exit
+  double angle1 = _calculateStrokeAngle(stroke1);
+  double angle2 = _calculateStrokeAngle(stroke2);
 
-    List<Offset> stroke1 = strokes[0];
-    List<Offset> stroke2 = strokes[1];
+  bool stroke1IsVertical = _isMostlyVertical(angle1);
+  bool stroke2IsHorizontal = _isMostlyHorizontal(angle2);
+  bool stroke1IsHorizontal = _isMostlyHorizontal(angle1);
+  bool stroke2IsVertical = _isMostlyVertical(angle2);
 
-    if (stroke1.isEmpty || stroke2.isEmpty) return false;
-
-    Offset vStart, vEnd, hStart, hEnd;
-
-    double angle1 = _calculateStrokeAngle(stroke1);
-    double angle2 = _calculateStrokeAngle(stroke2);
-
-    if (_isMostlyVertical(angle1) && _isMostlyHorizontal(angle2)) {
-      vStart = stroke1.first;
-      vEnd = stroke1.last;
-      hStart = stroke2.first;
-      hEnd = stroke2.last;
-    } else if (_isMostlyVertical(angle2) && _isMostlyHorizontal(angle1)) {
-      vStart = stroke2.first;
-      vEnd = stroke2.last;
-      hStart = stroke1.first;
-      hEnd = stroke1.last;
-    } else {
-      return false;
-    }
-
-    if (!_isStrokeLongEnough(vStart, vEnd, canvasSize, true) ||
-        !_isStrokeLongEnough(hStart, hEnd, canvasSize, false)) {
-      return false;
-    }
-
-    // Corrected Intersection Check
-    return _doStrokesIntersect(vStart, vEnd, hStart, hEnd);
+  if (!((stroke1IsVertical && stroke2IsHorizontal) || (stroke1IsHorizontal && stroke2IsVertical))) {
+    print("Angles: Stroke 1: $angle1, Stroke 2: $angle2"); // Debug print
+    return false;
   }
 
-bool _isCrossDrawnMethodB(List<Offset> stroke, Size canvasSize) {
-    if (stroke.length < 3) return false;
-
-    int turningPointIndex = _findTurningPoint(stroke);
-    if (turningPointIndex == -1) return false;
-
-    List<Offset> segment1 = stroke.sublist(0, turningPointIndex + 1);
-    List<Offset> segment2 = stroke.sublist(turningPointIndex);
-
-    if (segment1.length < 2 || segment2.length < 2) return false;
-
-    double angle1 = _calculateStrokeAngle(segment1);
-    double angle2 = _calculateStrokeAngle(segment2);
-
-
-    if (!(_isMostlyVertical(angle1) && _isMostlyHorizontal(angle2)) &&
-        !(_isMostlyHorizontal(angle1) && _isMostlyVertical(angle2))) {
-      return false;
-    }
-
-    if (segment1.first == segment1.last || segment2.first == segment2.last) return false;
-
-
-    if (!_isStrokeLongEnough(segment1.first, segment1.last, canvasSize, _isMostlyVertical(angle1)) ||
-        !_isStrokeLongEnough(segment2.first, segment2.last, canvasSize, _isMostlyHorizontal(angle2))) { // Corrected: Check against horizontal for segment2
-      return false;
-    }
-
-    // Corrected Intersection Check
-    return _doStrokesIntersect(segment1.first, segment1.last, segment2.first, segment2.last);
+  // 3. Intersection Check
+  bool intersects = _doStrokesIntersect(stroke1, stroke2);
+  print("Intersection Check: $intersects"); // Debug print
+  return intersects;
 }
 
-  int _findTurningPoint(List<Offset> stroke) {
-    if (stroke.length < 3) return -1;
+// REMOVED _isSingleStrokeCross
 
-    double maxAngleChange = 0.0;
-    int turningPointIndex = -1;
+// Helper Functions (Cross Detection)
 
-    for (int i = 1; i < stroke.length - 1; i++) {
-      double angle1 = (stroke[i] - stroke[i - 1]).direction;
-      double angle2 = (stroke[i + 1] - stroke[i]).direction;
-      double angleChange = (angle2 - angle1).abs();
-
-      if (angleChange > pi) {
-        angleChange = 2 * pi - angleChange;
-      }
-
-      if (angleChange > maxAngleChange) {
-        maxAngleChange = angleChange;
-        turningPointIndex = i;
-      }
-    }
-
-    return (maxAngleChange > 0.52) ? turningPointIndex : -1;  // ~30 degrees
+bool _isStrokeLongEnough(List<Offset> stroke, Size canvasSize) {
+  if (stroke.isEmpty) return false;
+  double length = 0;
+  for (int i = 1; i < stroke.length; i++) {
+    length += (stroke[i] - stroke[i - 1]).distance;
   }
-
-  double _calculateStrokeAngle(List<Offset> stroke) {
-    final start = stroke.first;
-    final end = stroke.last;
-    final deltaX = end.dx - start.dx;
-    final deltaY = end.dy - start.dy;
-    return atan2(deltaY, deltaX) * 180 / pi;
-  }
-
-  bool _isMostlyVertical(double angle) {
-    return (angle > 45 && angle < 135) || (angle > -135 && angle < -45);
-  }
-
-  bool _isMostlyHorizontal(double angle) {
-    return (angle > -45 && angle < 45) || (angle > 135 || angle < -135);
-  }
-
-  bool _isStrokeLongEnough(Offset start, Offset end, Size canvasSize, bool isVertical) {
-    final deltaX = end.dx - start.dx;
-    final deltaY = end.dy - start.dy;
-    final length = sqrt(deltaX * deltaX + deltaY * deltaY);
-    return isVertical ? length >= canvasSize.height * 0.2 : length >= canvasSize.width * 0.2;
-  }
-
-// Corrected Intersection Check Function
-bool _doStrokesIntersect(Offset aStart, Offset aEnd, Offset bStart, Offset bEnd) {
-  double aDx = aEnd.dx - aStart.dx;
-  double aDy = aEnd.dy - aStart.dy;
-  double bDx = bEnd.dx - bStart.dx;
-  double bDy = bEnd.dy - bStart.dy;
-
-  // Handle parallel lines
-  double det = aDx * bDy - bDx * aDy;
-  if (det.abs() < 1e-9) {  // Tolerance for floating-point comparison
-    return false; // Lines are parallel (or nearly parallel)
-  }
-
-  double t = ((bStart.dx - aStart.dx) * aDy - (bStart.dy - aStart.dy) * aDx) / det;
-  double u = -((aStart.dx - bStart.dx) * bDy - (aStart.dy - bStart.dy) * bDx) / det;
-
-  // Check if the intersection point is within both line segments
-  return (t >= 0 && t <= 1 && u >= 0 && u <= 1);
+  double minLength = canvasSize.shortestSide * _minStrokeLengthRatio;
+  return length >= minLength;
 }
 
-  void _onPanEnd(DragEndDetails details, Size canvasSize) {
-    // Removed unnecessary null check
-    if (_isCrossDrawn(_strokes, canvasSize)) {
-      setState(() {
-        _crossDrawn = true;
-      });
-      _animationController.forward();
-      Future.delayed(const Duration(seconds: 1), () {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const PreparatoryScreen()),
-        );
-      });
-    } else {
-      setState(() {
+double _calculateStrokeAngle(List<Offset> stroke) {
+  if (stroke.length < 2) return 0.0; // Or throw an error, if appropriate
+  Offset start = stroke.first;
+  Offset end = stroke.last;
+  return atan2(end.dy - start.dy, end.dx - start.dx) * 180 / pi;
+}
+
+bool _isMostlyVertical(double angle) {
+  // Relaxed angle tolerance
+  return (angle > 90 - _angleTolerance && angle < 90 + _angleTolerance) ||
+         (angle > -90 - _angleTolerance && angle < -90 + _angleTolerance);
+}
+
+bool _isMostlyHorizontal(double angle) {
+  // Relaxed angle tolerance
+  return (angle > -_angleTolerance && angle < _angleTolerance) ||
+         (angle > 180 - _angleTolerance && angle < 180 + _angleTolerance) ||
+         (angle > -180 - _angleTolerance && angle < -180 + _angleTolerance); // Handle wrap-around
+}
+
+// Simplified intersection check using proximity
+bool _doStrokesIntersect(List<Offset> stroke1, List<Offset> stroke2) {
+  for (Offset point1 in stroke1) {
+    for (Offset point2 in stroke2) {
+      if ((point1 - point2).distance < _intersectionDistanceThreshold) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// REMOVED _findCornerIndex
+
+
+// Gesture Handling
+
+void _currentStrokeStart(Offset position) {
+    // Clear previous strokes only if we've already detected a cross.
+    // This allows for multiple attempts.
+    if (_crossDrawn) {
         _strokes.clear();
-        _currentStroke = null;
-      });
+        _crossDrawn = false; // Reset the flag
     }
+    _drawingStroke = <Offset>[position]; // Initialize the current stroke
+    setState(() {});
+}
+
+void _addToCurrentStroke(Offset position) {
+  if (_drawingStroke != null) {
+    _drawingStroke!.add(position);
+    setState(() {});
   }
+}
+
+void _onPanEnd(DragEndDetails details, Size canvasSize) {
+    if (_drawingStroke != null && _drawingStroke!.isNotEmpty) {
+        if (_strokes.isEmpty) {
+            // First stroke completed.  Store it.
+            _strokes.add(_drawingStroke!);
+            _drawingStroke = null; // Clear for the next stroke
+            setState(() {});
+        } else if (_strokes.length == 1) {
+          //second stroke
+          bool crossDetected = _isCrossDrawn(canvasSize);
+          if (crossDetected) {
+            _strokes.add(_drawingStroke!);
+            setState(() {
+              _crossDrawn = true;
+            });
+            _animationController.forward();
+            Future.delayed(const Duration(seconds: 1), () {
+              if (!mounted) return;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const PreparatoryScreen()),
+              );
+            });
+          }
+          else{
+            setState(() {
+              _strokes.clear();
+            });
+          }
+          _drawingStroke = null;
+        }
+    }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -399,10 +382,18 @@ bool _doStrokesIntersect(Offset aStart, Offset aEnd, Offset bStart, Offset bEnd)
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildGlowingText("In the Name", _line1FadeAnimation, screenWidth),
-                          _buildGlowingText("of the Father,", _line2FadeAnimation, screenWidth),
-                          _buildGlowingText("the Son", _line3FadeAnimation, screenWidth),
-                          _buildGlowingText("and the Holy Spirit.", _line4FadeAnimation, screenWidth),
+                          // _buildGlowingText("In the Name", _line1FadeAnimation, screenWidth), // OLD
+                          // _buildGlowingText("of the Father,", _line2FadeAnimation, screenWidth),
+                          // _buildGlowingText("the Son", _line3FadeAnimation, screenWidth),
+                          // _buildGlowingText("and the Holy Spirit.", _line4FadeAnimation, screenWidth),
+                          // _buildGlowText("In the Name", _line1FadeAnimation, screenWidth), // NEW
+                          // _buildGlowText("of the Father,", _line2FadeAnimation, screenWidth),
+                          // _buildGlowText("the Son", _line3FadeAnimation, screenWidth),
+                          // _buildGlowText("and the Holy Spirit.", _line4FadeAnimation, screenWidth),
+                          _buildGlowText("In the Name", _line1FadeAnimation, screenWidth),
+                          _buildGlowText("of the Father,", _line2FadeAnimation, screenWidth),
+                          _buildGlowText("the Son", _line3FadeAnimation, screenWidth),
+                          _buildGlowText("and the Holy Spirit.", _line4FadeAnimation, screenWidth),
                         ],
                       ),
                     ),
@@ -426,18 +417,17 @@ bool _doStrokesIntersect(Offset aStart, Offset aEnd, Offset bStart, Offset bEnd)
                           },
                           onPanEnd: (details) {
                             if (_allowDrawing) {
-                            _strokes.add(_currentStroke!);
                               _onPanEnd(details, canvasSize);
                             }
                           },
                           child: CustomPaint(
                             size: canvasSize,
                             painter: CrossPainter(
-                              strokes: _strokes,
+                              strokes: _strokes, // Completed strokes
                               glow: _crossDrawn,
                               animation: _animationController,
                               targetSize: targetCrossSize,
-                              currentStroke: _currentStroke,
+                              currentStroke: _drawingStroke, // Current stroke
                             ),
                           ),
                         );
@@ -550,51 +540,40 @@ bool _doStrokesIntersect(Offset aStart, Offset aEnd, Offset bStart, Offset bEnd)
     );
   }
 
-// Helper function to build glowing text
-  Widget _buildGlowingText(String text, Animation<double> animation, double screenWidth) {
-    return FadeTransition(
-      opacity: animation,
-      child: Text(
-        text,
-        style: GoogleFonts.roboto(
-          textStyle: TextStyle(
-            fontSize: screenWidth * 0.07,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.jesusChristGold.withAlpha(180),
-            height: 1.4,
-            shadows: [
-              Shadow(
-                color: AppTheme.jesusChristGold.withAlpha(100),
-                blurRadius: screenWidth * 0.02, // Adjust for desired glow
-                offset: Offset.zero,
-              ),
-            ],
-          ),
+// Helper function to build glowing text using FlutterGlow - MODIFIED
+Widget _buildGlowText(String text, Animation<double> animation, double screenWidth) {
+  return FadeTransition(
+    opacity: animation,
+    child: GlowText(
+      text,
+      style: GoogleFonts.roboto(
+        textStyle: TextStyle(
+          fontSize: screenWidth * 0.07,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.shimmeringGold, // Use the new shimmering gold
+          height: 1.4,
+          shadows: [ // Add a subtle text shadow
+            Shadow(
+              color: Colors.black.withAlpha((0.2 * 255).toInt()), // Dark shadow
+              offset: Offset(1, 1),
+              blurRadius: screenWidth * 0.01,
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  void _currentStrokeStart(Offset position) {
-    _currentStroke = <Offset>[position];
-    // Don't add to _strokes here, add it on pan end
-    setState(() {});
-  }
-
-  void _addToCurrentStroke(Offset position) {
-    if (_currentStroke != null) {
-      _currentStroke!.add(position);
-      setState(() {});
-    }
-  }
+      glowColor: AppTheme.shimmeringGold.withAlpha((0.9 * 255).toInt()), // Strong glow, slightly more opaque
+      blurRadius: screenWidth * 0.08, // Increased blur radius
+    ),
+  );
+}
 }
 
 class CrossPainter extends CustomPainter {
-  final List<List<Offset>> strokes;
+  final List<List<Offset>> strokes; // Completed strokes
   final bool glow;
   final Animation<double> animation;
   final Size targetSize;
-  final List<Offset>? currentStroke;
+  final List<Offset>? currentStroke; // Current stroke
 
   CrossPainter({
     required this.strokes,
@@ -650,6 +629,7 @@ class CrossPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
+    // Draw completed strokes
     for (final stroke in strokes) {
       final path = Path();
       if (stroke.isNotEmpty) {
@@ -661,9 +641,10 @@ class CrossPainter extends CustomPainter {
       }
     }
 
+    // Draw the current stroke (preview)
     if (currentStroke != null && currentStroke!.isNotEmpty) {
       final previewPaint = Paint()
-        ..color = Colors.white.withOpacity(0.5)
+        ..color = Colors.white.withAlpha((0.5 * 255).toInt())
         ..strokeWidth = 3.0
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round;

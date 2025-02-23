@@ -29,12 +29,11 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
 
   List<List<Map<String, String>>>? _verseSets; // Nullable
   int _currentVerseSetIndex = 0;
-  // bool _isFirstLaunch = true; // REMOVE THIS
+
 
   @override
   void initState() {
     super.initState();
-    print("initState called"); // DEBUG PRINT
     _verse1AnimationController =
         AnimationController(vsync: this, duration: const Duration(seconds: 2));
     _verse1FadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -54,13 +53,13 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
         AnimationController(vsync: this, duration: const Duration(seconds: 2))
           ..repeat(reverse: true);
 
-    _initData(); // Load JSON and check first launch
+    // _initData() is NOT called here. It's handled by the FutureBuilder.
   }
 
   // Combined initialization function - now returns Future<void>
   Future<void> _initData() async {
     await _loadData(); // Await data loading
-    _startVerseAnimations(); // Start animations *after* data is loaded and *before* build
+    // _startVerseAnimations(); // Moved to didChangeDependencies
   }
 
   Future<void> _loadData() async {
@@ -97,27 +96,31 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
 
     // SharedPreferences
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    // final bool? hasLaunched = prefs.getBool('hasLaunched'); // REMOVE THIS
-
     // Always load the index, even on the "first" launch.  If it doesn't exist, it defaults to 0.
     _currentVerseSetIndex = prefs.getInt('currentVerseSetIndex') ?? 0;
-
-    print("Loaded data. _currentVerseSetIndex: $_currentVerseSetIndex"); // DEBUG
-    // No setState here!  FutureBuilder handles rebuilding.
   }
 
+
+    @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+        // Start animations *here*, in didChangeDependencies, *after* the first build.
+        // This ensures that the widget is fully built and mounted.
+        _startVerseAnimations();
+
+  }
+
+
+
   Future<void> _startVerseAnimations() async {
+    // No need to check mounted here; didChangeDependencies only runs if mounted.
     await Future.delayed(const Duration(milliseconds: 333));
-    if (!mounted) return;
     _verse1AnimationController.forward();
     await Future.delayed(const Duration(milliseconds: 1333)); // Original delays
-    if (!mounted) return;
     _verse2AnimationController.forward();
     await Future.delayed(const Duration(milliseconds: 1777));
-    if (!mounted) return;
     _verse3AnimationController.forward();
     await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     // No need for setState here!
@@ -125,7 +128,6 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
     // Always increment and save the index.
     _currentVerseSetIndex = (_currentVerseSetIndex + 1) % _verseSets!.length; // Use null-aware operator
     await prefs.setInt('currentVerseSetIndex', _currentVerseSetIndex); //Save it using await
-    print("Animations started. _currentVerseSetIndex after increment: $_currentVerseSetIndex"); // DEBUG
   }
 
   @override
@@ -139,7 +141,6 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
 
   @override
   Widget build(BuildContext context) {
-    print("build called"); // DEBUG PRINT
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -153,11 +154,8 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
 
     // Verses
     final double verseFontSize = screenWidth * 0.065;
-    // Conditional padding and spacing
-    final double versePaddingVertical =
-        screenHeight * (screenWidth < 350 ? 0.015 : 0.01);
-    final double verseSpacing =
-        screenHeight * (screenWidth < 350 ? 0.01 : 0.005);
+    final double versePaddingVertical = screenHeight * (screenWidth < 350 ? 0.015 : 0.01);
+    final double verseSpacing = screenHeight * (screenWidth < 350 ? 0.01 : 0.005);
     final double versePaddingHorizontal = screenWidth * 0.03;
     final double verseBorderRadius = screenWidth * 0.025;
 
@@ -172,11 +170,10 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
 
     return Scaffold(
       body: FutureBuilder<void>(
-        future: _initData(),
+        future: Future.value(_initData()), // Use Future.value
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             // Data loading is complete, build the UI
-            print("FutureBuilder: ConnectionState.done"); // DEBUG
             return Container(
               width: screenWidth,
               height: screenHeight,
@@ -219,87 +216,83 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
                     ),
 
                     // Verses Section (Wrapped in Expanded)
-                    Expanded(
+                    Expanded( // Wrap with Expanded
                       child: SingleChildScrollView(
                         padding: EdgeInsets.only(
                             left: screenWidth * 0.06,
                             right: screenWidth * 0.06,
                             top: screenHeight * 0.005,
                             bottom: 0),
-                        child: Column(
+                        child: Column( // This Column is now the problem
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             // Verse 1
-                            Flexible(
-                              child: FadeTransition(
-                                opacity: _verse1FadeAnimation,
-                                child: _buildVerseContainer(
-                                  verseText:  (_verseSets != null
-                                          ? _verseSets![_currentVerseSetIndex][0]['text']!
-                                          : "" ),
-                                  citation:  (_verseSets != null
-                                          ? _verseSets![_currentVerseSetIndex][0]['citation']!
-                                          : "" ),
-                                  verseFontSize: verseFontSize,
-                                  versePaddingVertical: versePaddingVertical,
-                                  versePaddingHorizontal: versePaddingHorizontal,
-                                  verseBorderRadius: verseBorderRadius,
-                                  citationIconSize: citationIconSize,
-                                  screenWidth: screenWidth,
-                                  verseIndex: 0, // Pass index 0
-                                ),
+                            FadeTransition(
+                              opacity: _verse1FadeAnimation,
+                              child: _buildVerseContainer(
+                                verseText: (_verseSets != null
+                                    ? _verseSets![_currentVerseSetIndex][0]['text']!
+                                    : ""),
+                                citation: (_verseSets != null
+                                    ? _verseSets![_currentVerseSetIndex][0]['citation']!
+                                    : ""),
+                                verseFontSize: verseFontSize,
+                                versePaddingVertical: versePaddingVertical,
+                                versePaddingHorizontal: versePaddingHorizontal,
+                                verseBorderRadius: verseBorderRadius,
+                                citationIconSize: citationIconSize,
+                                screenWidth: screenWidth,
+                                verseIndex: 0,
                               ),
                             ),
-                            SizedBox(height: verseSpacing),
+                            SizedBox(height: verseSpacing), // Use SizedBox for spacing
 
                             // Verse 2
-                            Flexible(
-                              child: FadeTransition(
-                                opacity: _verse2FadeAnimation,
-                                child: _buildVerseContainer(
-                                   verseText:  (_verseSets != null
-                                          ? _verseSets![_currentVerseSetIndex][1]['text']!
-                                          : "" ),
-                                  citation:  (_verseSets != null
-                                          ? _verseSets![_currentVerseSetIndex][1]['citation']!
-                                          : "" ),
-                                  verseFontSize: verseFontSize,
-                                  versePaddingVertical: versePaddingVertical,
-                                  versePaddingHorizontal: versePaddingHorizontal,
-                                  verseBorderRadius: verseBorderRadius,
-                                  citationIconSize: citationIconSize,
-                                  screenWidth: screenWidth,
-                                  verseIndex: 1, // Pass index 1
-                                ),
+                            FadeTransition(
+                              opacity: _verse2FadeAnimation,
+                              child: _buildVerseContainer(
+                                verseText: (_verseSets != null
+                                    ? _verseSets![_currentVerseSetIndex][1]['text']!
+                                    : ""),
+                                citation: (_verseSets != null
+                                    ? _verseSets![_currentVerseSetIndex][1]['citation']!
+                                    : ""),
+                                verseFontSize: verseFontSize,
+                                versePaddingVertical: versePaddingVertical,
+                                versePaddingHorizontal: versePaddingHorizontal,
+                                verseBorderRadius: verseBorderRadius,
+                                citationIconSize: citationIconSize,
+                                screenWidth: screenWidth,
+                                verseIndex: 1,
                               ),
                             ),
                             SizedBox(height: verseSpacing),
 
                             // Verse 3
-                            Flexible(
-                              child: FadeTransition(
-                                opacity: _verse3FadeAnimation,
-                                child: _buildVerseContainer(
-                                   verseText:  (_verseSets != null
-                                          ? _verseSets![_currentVerseSetIndex][2]['text']!
-                                          : "" ),
-                                  citation:  (_verseSets != null
-                                          ? _verseSets![_currentVerseSetIndex][2]['citation']!
-                                          : "" ),
-                                  verseFontSize: verseFontSize,
-                                  versePaddingVertical: versePaddingVertical,
-                                  versePaddingHorizontal: versePaddingHorizontal,
-                                  verseBorderRadius: verseBorderRadius,
-                                  citationIconSize: citationIconSize,
-                                  screenWidth: screenWidth,
-                                  verseIndex: 2, // Pass index 2
-                                ),
+                            FadeTransition(
+                              opacity: _verse3FadeAnimation,
+                              child: _buildVerseContainer(
+                                verseText: (_verseSets != null
+                                    ? _verseSets![_currentVerseSetIndex][2]['text']!
+                                    : ""),
+                                citation: (_verseSets != null
+                                    ? _verseSets![_currentVerseSetIndex][2]['citation']!
+                                    : ""),
+                                verseFontSize: verseFontSize,
+                                versePaddingVertical: versePaddingVertical,
+                                versePaddingHorizontal: versePaddingHorizontal,
+                                verseBorderRadius: verseBorderRadius,
+                                citationIconSize: citationIconSize,
+                                screenWidth: screenWidth,
+                                verseIndex: 2,
                               ),
                             ),
+                            // SizedBox(height: verseSpacing), // Consistent spacing - No need for this final one
                           ],
                         ),
                       ),
                     ),
+
 
                     // Button Section
                     Padding(
@@ -419,7 +412,7 @@ class _PreparatoryScreenState extends State<PreparatoryScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
+          Expanded( // Wrap with Expanded
             child: Text(
               // Use a conditional expression to handle null _verseSets
 
