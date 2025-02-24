@@ -31,6 +31,6 @@ This app is currently in development and is not yet available on the Play Store.
 
 ## Development Status
 
-This app is a work in progress. Expect updates and potential changes. Feedback is welcome! Please report any issues or suggestions [Link to your GitHub Issues page or your preferred contact method].
+This app is a work in progress. Expect updates and potential changes. Feedback is welcome! Please report any issues or suggestions.
 
 **Note:** The app's responsiveness (font sizes, layout) may not be perfect on all screen sizes yet. This is an area of ongoing development.
